@@ -3,7 +3,6 @@ package chat
 import (
 	"strings"
 	"sync"
-	"time"
 
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/yarikbratashchuk/cafebot/config"
@@ -14,37 +13,43 @@ type (
 	// intrHandler is responsible for handling interactions via
 	// bot message updates
 	intrHandler struct {
-		once sync.Once
+		once *sync.Once
 
-		data     config.CafeConfig
-		bot      *api.BotAPI
-		handlers map[string]intrFunc
+		data config.CafeConfig
+		bot  *api.BotAPI
+
+		handlers  map[intrEndpoint]intrFunc
+		keyboards map[intrEndpoint]keyboardFunc
 	}
 
-	intrFunc func(string, api.Update, order.Order)
+	intrFunc     func(string, api.Update, order.Order)
+	keyboardFunc func(order.Order) *api.InlineKeyboardMarkup
+
+	intrEndpoint string
 )
 
 // intr is concurrent safe intrHandler singleton
-var intr intrHandler
+var intr = intrHandler{once: &sync.Once{}}
 
 const (
-	intrWhereEndpoint = "where"
-	intrWhenEndpoint  = "when"
-	intrWhatEndpoint  = "what"
+	intrWhere intrEndpoint = "where"
+	intrWhen  intrEndpoint = "when"
+	intrWhat  intrEndpoint = "what"
 )
 
-func initIntrHandler(cafedata config.CafeConfig, bot *api.BotAPI) error {
+func initIntrHandler(bot *api.BotAPI, cafeconf config.CafeConfig) error {
 	if bot == nil {
 		return errNoAPI
 	}
 	intr.once.Do(func() {
 		intr.bot = bot
-		intr.data = cafedata
-		intr.handlers = map[string]intrFunc{
-			intrWhereEndpoint: intr.where,
-			intrWhenEndpoint:  intr.when,
-			intrWhatEndpoint:  intr.what,
+		intr.data = cafeconf
+		intr.handlers = map[intrEndpoint]intrFunc{
+			intrWhere: intr.where,
+			intrWhen:  intr.when,
+			intrWhat:  intr.what,
 		}
+		intr.keyboards = initKeyboards(cafeconf)
 	})
 	return nil
 }
@@ -62,7 +67,7 @@ func (i intrHandler) handle(
 	if len(parts) == 0 {
 		return
 	}
-	h, ok := i.handlers[parts[0]]
+	h, ok := i.handlers[intrEndpoint(parts[0])]
 	if !ok {
 		return
 	}
@@ -77,41 +82,19 @@ func (i intrHandler) where(
 ) {
 	log.Debug("intr.where")
 
-	editText := api.EditMessageTextConfig{
-		BaseEdit: api.BaseEdit{
-			ChatID:    update.CallbackQuery.Message.Chat.ID,
-			MessageID: update.CallbackQuery.Message.MessageID,
-		},
-		Text: message["where?"],
-	}
+	msgInfo := update.CallbackQuery.Message
+	text := text["where?"]
 
-	_, err := i.bot.Send(editText)
+	err := i.updateText(msgInfo, text)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("update text %#v: %v", msgInfo, err)
+		return
 	}
 
-	keyboardMarkup := api.NewInlineKeyboardMarkup(
-		api.NewInlineKeyboardRow(
-			api.NewInlineKeyboardButtonData(
-				buttonText["here"],
-				"order_when?takeaway=0",
-			),
-			api.NewInlineKeyboardButtonData(
-				buttonText["takeaway"],
-				"order_when?takeaway=1",
-			),
-		),
-	)
-
-	editKeyboard := api.EditMessageReplyMarkupConfig{
-		BaseEdit: api.BaseEdit{
-			ChatID:      update.CallbackQuery.Message.Chat.ID,
-			MessageID:   update.CallbackQuery.Message.MessageID,
-			ReplyMarkup: &keyboardMarkup,
-		},
+	err = i.updateKeyboard(msgInfo, intrWhere, order)
+	if err != nil {
+		log.Errorf("update keyboard %#v: %v", msgInfo, err)
 	}
-
-	i.bot.Send(editKeyboard)
 }
 
 func (i intrHandler) when(
@@ -121,48 +104,19 @@ func (i intrHandler) when(
 ) {
 	log.Debug("intr.when")
 
-	editText := api.EditMessageTextConfig{
-		BaseEdit: api.BaseEdit{
-			ChatID:    update.CallbackQuery.Message.Chat.ID,
-			MessageID: update.CallbackQuery.Message.MessageID,
-		},
-		Text: message["when?"],
-	}
+	msgInfo := update.CallbackQuery.Message
+	text := text["when?"]
 
-	_, err := i.bot.Send(editText)
+	err := i.updateText(msgInfo, text)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("update text %#v: %v", msgInfo, err)
+		return
 	}
 
-	// we need everything except hour and minute to be 0
-	now, _ := time.Parse("15:04", time.Now().Format("15:04"))
-
-	timeSlots := generateTimeSlots(
-		now,
-		i.data.TimeSlotInterval,
-		i.data.TimeSlotNumber,
-		time.Time(i.data.OpenTime),
-		time.Time(i.data.CloseTime),
-	)
-	timeRows := generateTimeSlotsKeyboard(
-		timeSlots,
-		i.data.TimeSlotNumInRow,
-		intrWhatEndpoint,
-	)
-
-	keyboardRows := append(timeRows, backKeyboardButton("order_where"))
-
-	keyboardMarkup := api.NewInlineKeyboardMarkup(keyboardRows...)
-
-	editKeyboard := api.EditMessageReplyMarkupConfig{
-		BaseEdit: api.BaseEdit{
-			ChatID:      update.CallbackQuery.Message.Chat.ID,
-			MessageID:   update.CallbackQuery.Message.MessageID,
-			ReplyMarkup: &keyboardMarkup,
-		},
+	err = i.updateKeyboard(msgInfo, intrWhen, order)
+	if err != nil {
+		log.Errorf("update keyboard %#v: %v", msgInfo, err)
 	}
-
-	i.bot.Send(editKeyboard)
 }
 
 func (i intrHandler) what(
@@ -173,4 +127,32 @@ func (i intrHandler) what(
 	log.Debug("intr.what")
 
 	// TODO: add stuff here
+}
+
+func (i intrHandler) updateText(msgInfo *api.Message, text string) error {
+	editText := api.EditMessageTextConfig{
+		BaseEdit: api.BaseEdit{
+			ChatID:    msgInfo.Chat.ID,
+			MessageID: msgInfo.MessageID,
+		},
+		Text: text,
+	}
+	_, err := i.bot.Send(editText)
+	return err
+}
+
+func (i intrHandler) updateKeyboard(
+	msgInfo *api.Message,
+	endpoint intrEndpoint,
+	o order.Order,
+) error {
+	editKeyboard := api.EditMessageReplyMarkupConfig{
+		BaseEdit: api.BaseEdit{
+			ChatID:      msgInfo.Chat.ID,
+			MessageID:   msgInfo.MessageID,
+			ReplyMarkup: i.keyboards[endpoint](o),
+		},
+	}
+	_, err := i.bot.Send(editKeyboard)
+	return err
 }

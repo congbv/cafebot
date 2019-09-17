@@ -1,55 +1,58 @@
 package chat
 
 import (
-	"net/url"
+	"strings"
 	"time"
 
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/yarikbratashchuk/cafebot/order"
 )
 
+type orderOp string
+
 const (
-	orderOpAddMeal     = "add_meal"
-	orderOpRemoveMeal  = "remove_meal"
-	orderOpSetTime     = "set_time"
-	orderOpSetTakeaway = "set_takeaway"
+	opAddMeal    orderOp = "add_meal"
+	opRemoveMeal orderOp = "remove_meal"
+	opWhen       orderOp = "when"
+	opWhere      orderOp = "where"
+
+	opWhereHere     = "here"
+	opWhereTakeaway = "takeaway"
 )
 
 // processOrder handles user order updates
-func (s *service) processOrder(u *api.User, params url.Values) {
-	if params == nil {
-		return
+func (s *service) processOrder(u *api.User, opData string) order.Order {
+	splited := strings.Split(opData, "=")
+	if len(splited) < 2 {
+		return order.Order{}
 	}
 
-	for op, vals := range params {
-		if len(vals) == 0 {
-			continue
+	op := orderOp(splited[0])
+	val := splited[1]
+
+	var o *order.Order
+
+	switch op {
+	case opAddMeal:
+		o = s.order.AddMeal(u, val)
+
+	case opRemoveMeal:
+		o = s.order.RemoveMeal(u, val)
+
+	case opWhen:
+		t, err := time.Parse("15:04", val)
+		if err != nil {
+			log.Errorf("processOrder: set time: %s", err)
+			return order.Order{}
 		}
+		o = s.order.SetTime(u, t)
 
-		v := vals[0]
+	case opWhere:
+		o = s.order.SetTakeaway(u, val == opWhereTakeaway)
 
-		switch op {
-		case orderOpAddMeal:
-			s.order.AddMeal(u, v)
-
-		case orderOpRemoveMeal:
-			s.order.RemoveMeal(u, v)
-
-		case orderOpSetTime:
-			t, err := time.Parse("15:04", v)
-			if err != nil {
-				log.Errorf("processOrder: set time: %s", err)
-				continue
-			}
-			s.order.SetTime(u, t)
-
-		case orderOpSetTakeaway:
-			var takeaway bool
-			if v == "1" {
-				takeaway = true
-			}
-			s.order.SetTakeaway(u, takeaway)
-		default:
-		}
+	default:
 	}
 
+	// no need to pass pointer further
+	return *o
 }

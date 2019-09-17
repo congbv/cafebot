@@ -1,79 +1,87 @@
 package chat
 
 import (
+	"fmt"
 	"time"
 
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/yarikbratashchuk/cafebot/config"
+	"github.com/yarikbratashchuk/cafebot/order"
 )
 
-func generateTimeSlots(
-	startFrom time.Time,
-	interval time.Duration,
-	totalSlotNum int,
-	lowerLimit time.Time,
-	upperLimit time.Time,
-) []string {
-	if totalSlotNum == 0 {
-		totalSlotNum = 12
-	}
+func initKeyboards(conf config.CafeConfig) map[intrEndpoint]keyboardFunc {
+	keyboards := map[intrEndpoint]keyboardFunc{
+		intrWhere: func(o order.Order) *api.InlineKeyboardMarkup {
+			nextIntr := intrWhen
 
-	vals := make([]string, totalSlotNum)
-
-	val := startFrom.Round(interval)
-	if val.Before(startFrom) {
-		val = val.Add(interval)
-	}
-
-	if val.Before(lowerLimit) {
-		val = lowerLimit
-	}
-
-	for i := 0; i < totalSlotNum; i++ {
-		vals[i] = val.Format("15:04")
-		if val.Equal(upperLimit) || val.After(upperLimit) {
-			break
-		}
-		val = val.Add(interval)
-	}
-
-	return vals
-}
-
-func generateTimeSlotsKeyboard(
-	slots []string,
-	numInRow int,
-	nextInteraction string,
-) [][]api.InlineKeyboardButton {
-	totalSlots := len(slots)
-	totalRows := totalSlots / numInRow
-
-	if totalSlots == 0 || numInRow == 0 {
-		return [][]api.InlineKeyboardButton{}
-	}
-
-	buttons := make([][]api.InlineKeyboardButton, totalRows)
-	for i := range buttons {
-		buttons[i] = make([]api.InlineKeyboardButton, numInRow)
-	}
-
-	for i := 0; i < totalRows; i++ {
-		for j := 0; j < numInRow; j++ {
-			slot := slots[i*numInRow+j]
-			buttons[i][j] = api.NewInlineKeyboardButtonData(
-				slot,
-				nextInteraction+"?when="+slot,
+			hereButton := newIntrButton(
+				buttonText["here"],
+				newIntrData(nextIntr, opWhere, opWhereHere),
+				o.Takeaway != nil && *o.Takeaway == false,
 			)
-		}
+			takeawayButton := newIntrButton(
+				buttonText["takeaway"],
+				newIntrData(nextIntr, opWhere, opWhereTakeaway),
+				o.Takeaway != nil && *o.Takeaway == true,
+			)
+
+			keyboard := api.NewInlineKeyboardMarkup(
+				api.NewInlineKeyboardRow(
+					hereButton,
+					takeawayButton,
+				),
+			)
+
+			return &keyboard
+		},
+		intrWhen: func(o order.Order) *api.InlineKeyboardMarkup {
+			nextIntr := intrWhat
+			prevIntr := intrWhere
+
+			// we need everything except hour and minute to be 0
+			now, _ := time.Parse("15:04", time.Now().Format("15:04"))
+
+			buttonRows := append(
+				generateTimeSlotsKeyboard(
+					nextIntr,
+					generateTimeSlots(
+						now,
+						conf.TimeSlotInterval,
+						time.Time(conf.OpenTime),
+						time.Time(conf.CloseTime),
+					),
+					o.Time,
+				),
+				backKeyboardButton(prevIntr),
+			)
+			keyboard := api.NewInlineKeyboardMarkup(buttonRows...)
+
+			return &keyboard
+		},
+		intrWhat: func(o order.Order) *api.InlineKeyboardMarkup {
+			return nil
+		},
 	}
 
-	return buttons
+	return keyboards
 }
 
-func backKeyboardButton(prevInteraction string) []api.InlineKeyboardButton {
+func backKeyboardButton(prevIntr intrEndpoint) []api.InlineKeyboardButton {
 	return api.NewInlineKeyboardRow(
 		api.NewInlineKeyboardButtonData(
-			buttonText["step_back"],
-			prevInteraction,
+			buttonText["back"],
+			string(prevIntr),
 		),
 	)
+}
+
+func newIntrData(e intrEndpoint, op orderOp, opval string) string {
+	return fmt.Sprintf("%s?%s=%s", e, op, opval)
+}
+
+func newIntrButton(text, data string, selected bool) api.InlineKeyboardButton {
+	if selected {
+		text = buttonText["selected"] + text
+	}
+	return api.NewInlineKeyboardButtonData(text, data)
 }

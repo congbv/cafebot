@@ -2,8 +2,6 @@
 package chat
 
 import (
-	"errors"
-	"net/url"
 	"strings"
 	"time"
 
@@ -35,7 +33,7 @@ func NewService(
 
 	for _, f := range []func(){
 		func() { err = initCmdHandler(bot) },
-		func() { err = initIntrHandler(conf.Cafe, bot) },
+		func() { err = initIntrHandler(bot, conf.Cafe) },
 	} {
 		if err != nil {
 			continue
@@ -47,9 +45,8 @@ func NewService(
 	}
 
 	s := &service{
-		conf: conf,
-		bot:  bot,
-
+		conf:  conf,
+		bot:   bot,
 		order: orderService,
 
 		done: make(chan struct{}),
@@ -92,39 +89,34 @@ func (s *service) handleUpdate(update api.Update) {
 	if update.CallbackQuery != nil {
 		log.Debugf("received callback: %#v", update.CallbackQuery)
 
-		reqdata, params, err := splitDataParams(update.CallbackQuery.Data)
+		intrData, opData, err := splitReqData(update.CallbackQuery.Data)
 		if err != nil {
-			log.Errorf("cutOffParams: %s", err)
+			log.Errorf("splitReqData: %s", err)
 			return
 		}
 
-		user := update.CallbackQuery.From
-		s.processOrder(user, params)
-		order := *s.order.Get(user)
+		order := s.processOrder(update.CallbackQuery.From, opData)
+		intr.handle(intrData, update, order)
 
-		intr.handle(reqdata, update, order)
 		return
 	}
 
 	if update.Message != nil {
 		log.Debugf("received message: %#v", update.Message)
 
-		cmd.handle(update.Message.Command(), update)
+		err := cmd.handle(update.Message.Command(), update)
+		if err != nil {
+			log.Errorf("cmd.handle: %s", err)
+			return
+		}
 	}
 }
 
-func splitDataParams(reqdata string) (string, url.Values, error) {
+func splitReqData(reqdata string) (string, string, error) {
 	splited := strings.Split(reqdata, "?")
-	data := splited[0]
-	if data == "" {
-		return "", nil, errors.New("empty data value")
+	opdata := ""
+	if len(splited) > 1 {
+		opdata = splited[1]
 	}
-	if len(splited) < 2 {
-		return data, nil, nil
-	}
-	params, err := url.ParseQuery(splited[1])
-	if err != nil {
-		return "", nil, err
-	}
-	return data, params, nil
+	return splited[0], opdata, nil
 }

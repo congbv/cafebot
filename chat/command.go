@@ -8,16 +8,20 @@ import (
 )
 
 // cmdHandler is responsible for handling chat commands
-type cmdHandler struct {
-	once sync.Once
+type (
+	cmdHandler struct {
+		once *sync.Once
 
-	bot      *api.BotAPI
-	commands map[string]func(api.Update)
-}
+		bot      *api.BotAPI
+		commands map[string]cmdFunc
+	}
+
+	cmdFunc func(api.Update) error
+)
 
 var (
 	// cmd is concurrent safe cmdHandler singleton
-	cmd cmdHandler
+	cmd = cmdHandler{once: &sync.Once{}}
 
 	errNoAPI = errors.New("bot api is nil")
 )
@@ -33,7 +37,7 @@ func initCmdHandler(bot *api.BotAPI) error {
 	}
 	cmd.once.Do(func() {
 		cmd.bot = bot
-		cmd.commands = map[string]func(api.Update){
+		cmd.commands = map[string]cmdFunc{
 			cmdStartEndpoint: cmd.start,
 			cmdHelpEndpoint:  cmd.help,
 		}
@@ -41,51 +45,52 @@ func initCmdHandler(bot *api.BotAPI) error {
 	return nil
 }
 
-func (c cmdHandler) handle(command string, update api.Update) {
+func (c cmdHandler) handle(command string, update api.Update) error {
 	if c.commands == nil {
 		panic("cmd is not initialized")
 	}
 
 	h, ok := c.commands[command]
 	if !ok {
-		c.wrong(update)
-		return
+		h = c.wrong
 	}
 
-	h(update)
+	return h(update)
 }
 
-func (c cmdHandler) help(update api.Update) {
+func (c cmdHandler) help(update api.Update) error {
 	log.Debug("cmd.help")
 
 	msg := api.NewMessage(
 		update.Message.Chat.ID,
-		message["help"],
+		text["help"],
 	)
 
-	c.bot.Send(msg)
+	_, err := c.bot.Send(msg)
+	return err
 }
 
-func (c cmdHandler) start(update api.Update) {
+func (c cmdHandler) start(update api.Update) error {
 	log.Debug("cmd.start")
 
 	msg := api.NewMessage(
 		update.Message.Chat.ID,
-		message["start"],
+		text["start"],
 	)
 	msg.ReplyMarkup = api.NewInlineKeyboardMarkup(
 		api.NewInlineKeyboardRow(
 			api.NewInlineKeyboardButtonData(
 				buttonText["new_order"],
-				intrWhereEndpoint,
+				string(intrWhere),
 			),
 		),
 	)
 
-	c.bot.Send(msg)
+	_, err := c.bot.Send(msg)
+	return err
 }
 
-func (c cmdHandler) wrong(update api.Update) {
+func (c cmdHandler) wrong(update api.Update) error {
 	log.Debug("cmd.wrong")
 
 	var chatID int64
@@ -97,8 +102,9 @@ func (c cmdHandler) wrong(update api.Update) {
 
 	msg := api.NewMessage(
 		chatID,
-		message["wrong"],
+		text["wrong"],
 	)
 
-	c.bot.Send(msg)
+	_, err := c.bot.Send(msg)
+	return err
 }
