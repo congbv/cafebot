@@ -68,8 +68,8 @@ func testSetTime(t *testing.T, s order.Service, u *api.User) {
 
 func testSetTakeaway(t *testing.T, s order.Service, u *api.User) {
 	order := s.SetTakeaway(u, true)
-	if !order.Takeaway {
-		t.Error("takeway was not set")
+	if order.Takeaway == nil || !*order.Takeaway {
+		t.Error("takeway value is wrong")
 	}
 	if order.User.ID != u.ID {
 		t.Error("order has no user")

@@ -12,7 +12,7 @@ import (
 type Order struct {
 	User     *api.User
 	Meal     []string
-	Takeaway bool
+	Takeaway *bool
 	Time     *time.Time
 }
 
@@ -79,7 +79,7 @@ func (s *inMemService) SetTime(u *api.User, t time.Time) *Order {
 
 func (s *inMemService) SetTakeaway(u *api.User, takeaway bool) *Order {
 	order := s.get(u)
-	order.Takeaway = takeaway
+	order.Takeaway = &takeaway
 	log.Debugf("Takeaway: %#v", order)
 	return order
 }
@@ -98,7 +98,10 @@ func (s *inMemService) FinishOrder(u *api.User) (*Order, error) {
 		return nil, errors.New("order has no meal selected")
 	}
 	if order.Time == nil {
-		return nil, errors.New("order time is not specified")
+		return nil, errors.New("order time is not selected")
+	}
+	if order.Takeaway == nil {
+		return nil, errors.New("order place is not selected")
 	}
 	s.mu.Lock()
 	delete(s.orders, u.ID)
