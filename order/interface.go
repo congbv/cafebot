@@ -9,7 +9,6 @@ import (
 
 // Service describes order creation operations
 type Service interface {
-	Get(*api.User) *Order
 	InitOrder(*api.User) *Order
 	AddMeal(*api.User, string) *Order
 	RemoveMeal(*api.User, string) *Order

@@ -31,10 +31,6 @@ func NewInMemoryService(conf config.Config) Service {
 	}
 }
 
-func (s *inMemService) Get(u *api.User) *Order {
-	return s.get(u)
-}
-
 func (s *inMemService) InitOrder(u *api.User) *Order {
 	order, ok := s.orders[u.ID]
 	if ok {
