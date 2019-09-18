@@ -24,12 +24,12 @@ func main() {
 		orderService,
 	)
 	if err != nil {
-		fatalf("create chat service: %s", err)
+		fatalf("creating chat service: %s", err)
 	}
 
 	err = chat.Run()
 	if err != nil {
-		fatalf("run chat interface: %s", err)
+		fatalf("running chat service: %s", err)
 	}
 
 	// Shutdown on SIGINT (CTRL-C).

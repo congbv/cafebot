@@ -21,7 +21,7 @@ type (
 
 var (
 	// cmd is concurrent safe cmdHandler singleton
-	cmd = cmdHandler{once: &sync.Once{}}
+	cmd = &cmdHandler{once: &sync.Once{}}
 
 	errNoAPI = errors.New("bot api is nil")
 )
@@ -32,6 +32,8 @@ const (
 )
 
 func initCmdHandler(bot *api.BotAPI) error {
+	log.Info("initializing cmd handler")
+
 	if bot == nil {
 		return errNoAPI
 	}
@@ -45,9 +47,9 @@ func initCmdHandler(bot *api.BotAPI) error {
 	return nil
 }
 
-func (c cmdHandler) handle(command string, update api.Update) error {
+func (c *cmdHandler) handle(command string, update api.Update) error {
 	if c.commands == nil {
-		panic("cmd is not initialized")
+		panic("command handler is not initialized")
 	}
 
 	h, ok := c.commands[command]
@@ -58,9 +60,7 @@ func (c cmdHandler) handle(command string, update api.Update) error {
 	return h(update)
 }
 
-func (c cmdHandler) help(update api.Update) error {
-	log.Debug("cmd.help")
-
+func (c *cmdHandler) help(update api.Update) error {
 	msg := api.NewMessage(
 		update.Message.Chat.ID,
 		text["help"],
@@ -70,9 +70,7 @@ func (c cmdHandler) help(update api.Update) error {
 	return err
 }
 
-func (c cmdHandler) start(update api.Update) error {
-	log.Debug("cmd.start")
-
+func (c *cmdHandler) start(update api.Update) error {
 	msg := api.NewMessage(
 		update.Message.Chat.ID,
 		text["start"],
@@ -90,9 +88,7 @@ func (c cmdHandler) start(update api.Update) error {
 	return err
 }
 
-func (c cmdHandler) wrong(update api.Update) error {
-	log.Debug("cmd.wrong")
-
+func (c *cmdHandler) wrong(update api.Update) error {
 	var chatID int64
 	if update.Message != nil {
 		chatID = update.Message.Chat.ID

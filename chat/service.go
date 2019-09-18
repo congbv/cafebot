@@ -87,11 +87,12 @@ func (s *service) Stop() { close(s.done) }
 
 func (s *service) handleUpdate(update api.Update) {
 	if update.CallbackQuery != nil {
-		log.Debugf("received callback: %#v", update.CallbackQuery)
+		log.Debugf("handling callback query: %+v", update.CallbackQuery)
 
-		intrData, opData, err := splitReqData(update.CallbackQuery.Data)
+		reqdata := update.CallbackQuery.Data
+		intrData, opData, err := splitReqData(reqdata)
 		if err != nil {
-			log.Errorf("splitReqData: %s", err)
+			log.Errorf("splitting request data %+v: %s", reqdata, err)
 			return
 		}
 
@@ -102,11 +103,12 @@ func (s *service) handleUpdate(update api.Update) {
 	}
 
 	if update.Message != nil {
-		log.Debugf("received message: %#v", update.Message)
+		log.Debugf("handling command: %+v", update.Message)
 
-		err := cmd.handle(update.Message.Command(), update)
+		command := update.Message.Command()
+		err := cmd.handle(command, update)
 		if err != nil {
-			log.Errorf("cmd.handle: %s", err)
+			log.Errorf("running command %+v: %s", command, err)
 			return
 		}
 	}

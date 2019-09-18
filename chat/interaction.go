@@ -38,6 +38,8 @@ const (
 )
 
 func initIntrHandler(bot *api.BotAPI, cafeconf config.CafeConfig) error {
+	log.Info("initializing interaction handler")
+
 	if bot == nil {
 		return errNoAPI
 	}
@@ -49,7 +51,16 @@ func initIntrHandler(bot *api.BotAPI, cafeconf config.CafeConfig) error {
 			intrWhen:  intr.when,
 			intrWhat:  intr.what,
 		}
-		intr.keyboards = initKeyboards(cafeconf)
+
+		// NOTE: since intr.keyboards are called from within intr.handlers
+		// all methods must have pointer receiver, otherwise
+		// intr.keyboards must be set before intr.handlers
+		intr.keyboards = map[intrEndpoint]keyboardFunc{
+			intrWhere: whereKeyboardFactory(cafeconf),
+			intrWhen:  whenKeyboardFactory(cafeconf),
+			intrWhat:  whatKeyboardFactory(cafeconf),
+		}
+
 	})
 	return nil
 }
@@ -60,7 +71,7 @@ func (i intrHandler) handle(
 	order order.Order,
 ) {
 	if i.handlers == nil {
-		panic("intr is not initialized")
+		panic("interaction handler is not initialized")
 	}
 
 	parts := strings.Split(reqdata, "/")
@@ -80,20 +91,18 @@ func (i intrHandler) where(
 	update api.Update,
 	order order.Order,
 ) {
-	log.Debug("intr.where")
-
 	msgInfo := update.CallbackQuery.Message
 	text := text["where?"]
 
 	err := i.updateText(msgInfo, text)
 	if err != nil {
-		log.Errorf("update text %#v: %v", msgInfo, err)
+		log.Errorf("updating text for %+v: %v", msgInfo, err)
 		return
 	}
 
 	err = i.updateKeyboard(msgInfo, intrWhere, order)
 	if err != nil {
-		log.Errorf("update keyboard %#v: %v", msgInfo, err)
+		log.Errorf("updating keyboard for %+v: %v", msgInfo, err)
 	}
 }
 
@@ -102,20 +111,18 @@ func (i intrHandler) when(
 	update api.Update,
 	order order.Order,
 ) {
-	log.Debug("intr.when")
-
 	msgInfo := update.CallbackQuery.Message
 	text := text["when?"]
 
 	err := i.updateText(msgInfo, text)
 	if err != nil {
-		log.Errorf("update text %#v: %v", msgInfo, err)
+		log.Errorf("updating text for %+v: %v", msgInfo, err)
 		return
 	}
 
 	err = i.updateKeyboard(msgInfo, intrWhen, order)
 	if err != nil {
-		log.Errorf("update keyboard %#v: %v", msgInfo, err)
+		log.Errorf("updating keyboard for %+v: %v", msgInfo, err)
 	}
 }
 
@@ -124,7 +131,6 @@ func (i intrHandler) what(
 	update api.Update,
 	order order.Order,
 ) {
-	log.Debug("intr.what")
 
 	// TODO: add stuff here
 }

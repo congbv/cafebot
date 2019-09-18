@@ -42,7 +42,7 @@ func (s *service) processOrder(u *api.User, opData string) order.Order {
 	case opWhen:
 		t, err := time.Parse("15:04", val)
 		if err != nil {
-			log.Errorf("processOrder: set time: %s", err)
+			log.Errorf("parsing time %+v:", val, err)
 			return order.Order{}
 		}
 		o = s.order.SetTime(u, t)

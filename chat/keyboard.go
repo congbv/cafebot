@@ -9,61 +9,63 @@ import (
 	"github.com/yarikbratashchuk/cafebot/order"
 )
 
-func initKeyboards(conf config.CafeConfig) map[intrEndpoint]keyboardFunc {
-	keyboards := map[intrEndpoint]keyboardFunc{
-		intrWhere: func(o order.Order) *api.InlineKeyboardMarkup {
-			nextIntr := intrWhen
+func whereKeyboardFactory(conf config.CafeConfig) keyboardFunc {
+	return func(o order.Order) *api.InlineKeyboardMarkup {
+		nextIntr := intrWhen
 
-			hereButton := newIntrButton(
-				buttonText["here"],
-				newIntrData(nextIntr, opWhere, opWhereHere),
-				o.Takeaway != nil && *o.Takeaway == false,
-			)
-			takeawayButton := newIntrButton(
-				buttonText["takeaway"],
-				newIntrData(nextIntr, opWhere, opWhereTakeaway),
-				o.Takeaway != nil && *o.Takeaway == true,
-			)
+		hereButton := newIntrButton(
+			buttonText["here"],
+			newIntrData(nextIntr, opWhere, opWhereHere),
+			o.Takeaway != nil && *o.Takeaway == false,
+		)
+		takeawayButton := newIntrButton(
+			buttonText["takeaway"],
+			newIntrData(nextIntr, opWhere, opWhereTakeaway),
+			o.Takeaway != nil && *o.Takeaway == true,
+		)
 
-			keyboard := api.NewInlineKeyboardMarkup(
-				api.NewInlineKeyboardRow(
-					hereButton,
-					takeawayButton,
-				),
-			)
+		keyboard := api.NewInlineKeyboardMarkup(
+			api.NewInlineKeyboardRow(
+				hereButton,
+				takeawayButton,
+			),
+		)
 
-			return &keyboard
-		},
-		intrWhen: func(o order.Order) *api.InlineKeyboardMarkup {
-			nextIntr := intrWhat
-			prevIntr := intrWhere
-
-			// we need everything except hour and minute to be 0
-			now, _ := time.Parse("15:04", time.Now().Format("15:04"))
-
-			buttonRows := append(
-				generateTimeSlotsKeyboard(
-					nextIntr,
-					generateTimeSlots(
-						now,
-						conf.TimeSlotInterval,
-						time.Time(conf.OpenTime),
-						time.Time(conf.CloseTime),
-					),
-					o.Time,
-				),
-				backKeyboardButton(prevIntr),
-			)
-			keyboard := api.NewInlineKeyboardMarkup(buttonRows...)
-
-			return &keyboard
-		},
-		intrWhat: func(o order.Order) *api.InlineKeyboardMarkup {
-			return nil
-		},
+		return &keyboard
 	}
+}
 
-	return keyboards
+func whenKeyboardFactory(conf config.CafeConfig) keyboardFunc {
+	return func(o order.Order) *api.InlineKeyboardMarkup {
+		nextIntr := intrWhat
+		prevIntr := intrWhere
+
+		// we need everything except hour and minute to be 0
+		now, _ := time.Parse("15:04", time.Now().Format("15:04"))
+
+		buttonRows := append(
+			generateTimeSlotsKeyboard(
+				nextIntr,
+				generateTimeSlots(
+					now,
+					conf.TimeSlotInterval,
+					time.Time(conf.OpenTime),
+					time.Time(conf.CloseTime),
+				),
+				o.Time,
+			),
+			backKeyboardButton(prevIntr),
+		)
+		keyboard := api.NewInlineKeyboardMarkup(buttonRows...)
+
+		return &keyboard
+	}
+}
+
+func whatKeyboardFactory(conf config.CafeConfig) keyboardFunc {
+	return func(o order.Order) *api.InlineKeyboardMarkup {
+		return nil
+	}
 }
 
 func backKeyboardButton(prevIntr intrEndpoint) []api.InlineKeyboardButton {

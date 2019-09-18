@@ -16,7 +16,8 @@ type Order struct {
 	Time     *time.Time
 }
 
-// inMemService is the most naive in memory implementation of the Service
+// inMemService is the most naive in memory
+// implementation of the Service
 type inMemService struct {
 	conf   config.Config
 	mu     *sync.RWMutex
@@ -40,17 +41,22 @@ func (s *inMemService) InitOrder(u *api.User) *Order {
 		User: u,
 		Meal: make([]string, 0, 1),
 	}
-	log.Debugf("InitOrder: %#v", order)
+
+	log.Debugf("initializing order: uid: %v", order.User.ID)
+
 	s.mu.Lock()
 	s.orders[u.ID] = order
 	s.mu.Unlock()
+
 	return order
 }
 
 func (s *inMemService) AddMeal(u *api.User, meal string) *Order {
 	order := s.get(u)
 	order.Meal = append(order.Meal, meal)
-	log.Debugf("AddMeal: %#v", order)
+
+	log.Debugf("adding meal: %s, order: %+v", meal, order)
+
 	return order
 }
 
@@ -62,21 +68,31 @@ func (s *inMemService) RemoveMeal(u *api.User, meal string) *Order {
 			break
 		}
 	}
-	log.Debugf("RemoveMeal: %#v", order)
+
+	log.Debugf("removing meal: %s, order: %+v", order)
+
 	return order
 }
 
 func (s *inMemService) SetTime(u *api.User, t time.Time) *Order {
 	order := s.get(u)
 	order.Time = &t
-	log.Debugf("SetTime: %#v", order)
+
+	log.Debugf(
+		"setting order time: %v, order: %+v",
+		t.Format("15:04"),
+		order,
+	)
+
 	return order
 }
 
 func (s *inMemService) SetTakeaway(u *api.User, takeaway bool) *Order {
 	order := s.get(u)
 	order.Takeaway = &takeaway
-	log.Debugf("Takeaway: %#v", order)
+
+	log.Debugf("setting takeaway: %v, order: %+v", takeaway, order)
+
 	return order
 }
 
@@ -84,25 +100,30 @@ func (s *inMemService) FinishOrder(u *api.User) (*Order, error) {
 	if u == nil {
 		return nil, errors.New("nil user provided")
 	}
+
 	s.mu.RLock()
 	order, ok := s.orders[u.ID]
 	s.mu.RUnlock()
 	if !ok {
 		return nil, errors.New("no order for such user")
 	}
+
 	if len(order.Meal) == 0 {
-		return nil, errors.New("order has no meal selected")
+		return nil, errors.New("no meal selected")
 	}
 	if order.Time == nil {
-		return nil, errors.New("order time is not selected")
+		return nil, errors.New("no time selected")
 	}
 	if order.Takeaway == nil {
-		return nil, errors.New("order place is not selected")
+		return nil, errors.New("no place selected")
 	}
+
 	s.mu.Lock()
 	delete(s.orders, u.ID)
 	s.mu.Unlock()
-	log.Debugf("FinishOrder: %#v", order)
+
+	log.Debugf("finishing order: %+v", order)
+
 	return order, nil
 }
 
