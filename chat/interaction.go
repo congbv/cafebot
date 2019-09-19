@@ -134,49 +134,52 @@ func (i *intrHandler) updateMessage(
 	intrData string,
 	o order.Order,
 ) {
-	// remove spiner at the top right corner of the button
-	i.bot.AnswerCallbackQuery(api.NewCallback(callbackQuery.ID, ""))
-
 	msgInfo := callbackQuery.Message
 
-	err := i.updateText(msgInfo, msgText)
-	if err != nil {
-		log.Errorf("updating text for %+v: %v", msgInfo, err)
-		return
+	newText := i.prepareUpdateText(msgInfo, msgText)
+	newKeyboard := i.prepareUpdateKeyboard(msgInfo, endpoint, intrData, o)
+
+	var err error
+	for _, f := range []func(){
+		func() { _, err = i.bot.Send(newText) },
+		func() { _, err = i.bot.Send(newKeyboard) },
+	} {
+		f()
+		if err != nil {
+			log.Errorf("sending update: %+v", err)
+		}
 	}
-	err = i.updateKeyboard(msgInfo, endpoint, intrData, o)
-	if err != nil {
-		log.Errorf("updating keyboard for %+v: %v", msgInfo, err)
-	}
+
+	// remove spiner at the top right corner of the button
+	_, _ = i.bot.AnswerCallbackQuery(api.NewCallback(callbackQuery.ID, ""))
 }
 
-// updateText updates text in the last message (from the bot)
-func (i *intrHandler) updateText(msgInfo *api.Message, text string) error {
-	editText := api.EditMessageTextConfig{
+// prepareUpdateText prepares text update for the last message from the bot
+func (i *intrHandler) prepareUpdateText(
+	msgInfo *api.Message,
+	text string,
+) api.EditMessageTextConfig {
+	return api.EditMessageTextConfig{
 		BaseEdit: api.BaseEdit{
 			ChatID:    msgInfo.Chat.ID,
 			MessageID: msgInfo.MessageID,
 		},
 		Text: text,
 	}
-	_, err := i.bot.Send(editText)
-	return err
 }
 
-// updateKeyboard updates inline keyboard in the last message (from the bot)
-func (i *intrHandler) updateKeyboard(
+// prepareUpdateKeyboard prepares new keyboard for the last message from the bot
+func (i *intrHandler) prepareUpdateKeyboard(
 	msgInfo *api.Message,
 	endpoint intrEndpoint,
 	intrData string,
 	o order.Order,
-) error {
-	editKeyboard := api.EditMessageReplyMarkupConfig{
+) api.EditMessageReplyMarkupConfig {
+	return api.EditMessageReplyMarkupConfig{
 		BaseEdit: api.BaseEdit{
 			ChatID:      msgInfo.Chat.ID,
 			MessageID:   msgInfo.MessageID,
 			ReplyMarkup: i.keyboards[endpoint](intrData, o),
 		},
 	}
-	_, err := i.bot.Send(editKeyboard)
-	return err
 }

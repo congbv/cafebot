@@ -68,13 +68,9 @@ func whatKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 		prevIntr := intrWhen
 
 		if intrData == "" {
-			categories := make([]string, 0, len(conf.Menu))
-			for cat := range conf.Menu {
-				categories = append(categories, cat)
-			}
 			buttonRows := append(
 				generateMenuCategoryButtonRows(
-					categories,
+					conf.Menu.Categories,
 					intrWhat,
 				),
 				backKeyboardButton(prevIntr),
@@ -83,7 +79,7 @@ func whatKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 			return &keyboard
 		}
 
-		meals, ok := conf.Menu[intrData]
+		meals, ok := conf.Menu.Map[intrData]
 		if !ok {
 			log.Errorf("invalid menu category requested: %s", intrData)
 			return nil
@@ -91,7 +87,7 @@ func whatKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 
 		buttonRows := append(
 			generateMenuMealButtonRows(intrData, meals, intrWhat, o),
-			backKeyboardButton(prevIntr),
+			backKeyboardButton(intrWhat),
 		)
 		keyboard := api.NewInlineKeyboardMarkup(buttonRows...)
 		return &keyboard

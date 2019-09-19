@@ -40,7 +40,26 @@ func (c *CafeTime) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type Menu map[string][]Meal
+type Menu struct {
+	Map        map[string][]Meal
+	Categories []string
+}
+
+func (m *Menu) UnmarshalJSON(data []byte) error {
+	dlen := len(data)
+	if dlen < 2 {
+		return errors.New("invalid menu data")
+	}
+
+	if err := json.Unmarshal(data, &m.Map); err != nil {
+		return err
+	}
+
+	for cat := range m.Map {
+		m.Categories = append(m.Categories, cat)
+	}
+	return nil
+}
 
 type Meal struct {
 	Val  string
@@ -63,7 +82,7 @@ func (m *Menu) MealByHash(hash string) (string, bool) {
 	if m == nil {
 		return "", false
 	}
-	for _, cat := range *m {
+	for _, cat := range m.Map {
 		for _, meal := range cat {
 			if meal.Hash == hash {
 				return meal.Val, true
