@@ -33,17 +33,24 @@ func (s *service) processOrder(u *api.User, opData string) order.Order {
 	val := splited[1]
 
 	switch op {
-	case opAddMeal:
-		o = s.order.AddMeal(u, val)
-
-	case opRemoveMeal:
-		o = s.order.RemoveMeal(u, val)
+	case opAddMeal, opRemoveMeal:
+		meal, ok := s.conf.Cafe.Menu.MealByHash(val)
+		if !ok {
+			log.Errorf("getting meal by hash: %+v: %s", val)
+			return *o
+		}
+		switch op {
+		case opAddMeal:
+			o = s.order.AddMeal(u, meal)
+		case opRemoveMeal:
+			o = s.order.RemoveMeal(u, meal)
+		}
 
 	case opWhen:
 		t, err := time.Parse("15:04", val)
 		if err != nil {
-			log.Errorf("parsing time %+v:", val, err)
-			return order.Order{}
+			log.Errorf("parsing time %+v: %s", val, err)
+			return *o
 		}
 		o = s.order.SetTime(u, t)
 

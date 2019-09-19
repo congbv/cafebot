@@ -120,14 +120,14 @@ func generateMenuCategoryButtonRows(
 
 func generateMenuMealButtonRows(
 	category string,
-	meals []string,
+	meals []config.Meal,
 	nextIntr intrEndpoint,
 	o order.Order,
 ) [][]api.InlineKeyboardButton {
 	buttonRows := make([][]api.InlineKeyboardButton, 0, len(meals))
 	for _, meal := range meals {
 		mealOp := opAddMeal
-		selected := contains(o.Meal, meal)
+		selected := contains(o.Meal, meal.Val)
 		if selected {
 			mealOp = opRemoveMeal
 		}
@@ -136,12 +136,12 @@ func generateMenuMealButtonRows(
 			buttonRows,
 			[]api.InlineKeyboardButton{
 				newIntrButton(
-					meal,
+					meal.Val,
 					newIntrData(
 						nextIntr,
 						category,
 						mealOp,
-						meal,
+						meal.Hash,
 					),
 					selected,
 				),
@@ -170,9 +170,9 @@ func newIntrButton(text, data string, selected bool) api.InlineKeyboardButton {
 	return api.NewInlineKeyboardButtonData(text, data)
 }
 
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
+func contains(mm []string, m string) bool {
+	for _, v := range mm {
+		if v == m {
 			return true
 		}
 	}

@@ -3,8 +3,11 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"time"
+
+	"github.com/dgryski/dgohash"
 )
 
 type CafeConfig struct {
@@ -12,7 +15,7 @@ type CafeConfig struct {
 	LastOrderTime       CafeTime `json:"last_order_time"`
 	TimeSlotIntervalMin int      `json:"time_slot_interval_min"`
 
-	Menu map[string][]string `json:"menu"`
+	Menu Menu `json:"menu"`
 }
 
 // CafeTime exists only because we need to unmarshal string of type HH:MM into
@@ -36,6 +39,40 @@ func (c *CafeTime) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+type Menu map[string][]Meal
+
+type Meal struct {
+	Val  string
+	Hash string
+}
+
+func (m *Meal) UnmarshalJSON(data []byte) error {
+	dlen := len(data)
+	if dlen < 2 {
+		return errors.New("invalid meal data")
+	}
+
+	m.Val = string(data[1 : dlen-1])
+	m.Hash = hashMeal(m.Val)
+
+	return nil
+}
+
+func (m *Menu) MealByHash(hash string) (string, bool) {
+	if m == nil {
+		return "", false
+	}
+	for _, cat := range *m {
+		for _, meal := range cat {
+			if meal.Hash == hash {
+				return meal.Val, true
+			}
+		}
+	}
+	return "", false
+}
+
 func loadCafeConfig(f string) (conf CafeConfig, err error) {
 	data, err := ioutil.ReadFile(f)
 	if err != nil {
@@ -43,4 +80,10 @@ func loadCafeConfig(f string) (conf CafeConfig, err error) {
 	}
 	err = json.Unmarshal(data, &conf)
 	return
+}
+
+func hashMeal(meal string) string {
+	hash := dgohash.NewSDBM32()
+	hash.Write([]byte(meal))
+	return fmt.Sprintf("%d", hash.Sum32())
 }

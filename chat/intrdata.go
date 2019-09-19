@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	intrSeparator   = '#'
+	intrSeparator   = '/'
 	intrOpSeparator = '?'
 )
 
