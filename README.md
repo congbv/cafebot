@@ -21,6 +21,18 @@ $ make install
 6. Check installation
 ```
 $ cafebot --help
+Usage:
+  cafebot [OPTIONS]
+
+  Application Options:
+    -p, --port=     port to listen on (default: 8080)
+        --tg-api-token= telegram bot api token [$TG_API_TOKEN]
+        --log-level=    log level for all subsystems {trace, debug, info, error, critical} (default: info)
+        --cafe-config=  cafe config file path (default: cafe.json)
+
+  Help Options:
+    -h, --help      Show this help message
+
 ```
 7. Edit `cafe.json` config file to match your cafe timetable and menu
 8. Run app and play with it
