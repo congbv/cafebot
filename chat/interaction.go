@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"fmt"
 	"sync"
 
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -22,7 +23,7 @@ type (
 	}
 
 	intrFunc     func(string, api.Update, order.Order)
-	keyboardFunc func(intrData string, o order.Order) *api.InlineKeyboardMarkup
+	keyboardFunc func(intrData string, o order.Order) api.InlineKeyboardMarkup
 
 	intrEndpoint string
 )
@@ -31,9 +32,10 @@ type (
 var intr = &intrHandler{once: &sync.Once{}}
 
 const (
-	intrWhere intrEndpoint = "where"
-	intrWhen  intrEndpoint = "when"
-	intrWhat  intrEndpoint = "what"
+	intrWhere        intrEndpoint = "where"
+	intrWhen         intrEndpoint = "when"
+	intrWhat         intrEndpoint = "what"
+	intrPreviewOrder intrEndpoint = "preview_order"
 )
 
 // initIntrHandler initializes intr singleton
@@ -48,18 +50,20 @@ func initIntrHandler(bot *api.BotAPI, cafeconf config.CafeConfig) error {
 		intr.bot = bot
 		intr.data = cafeconf
 		intr.handlers = map[intrEndpoint]intrFunc{
-			intrWhere: intr.where,
-			intrWhen:  intr.when,
-			intrWhat:  intr.what,
+			intrWhere:        intr.where,
+			intrWhen:         intr.when,
+			intrWhat:         intr.what,
+			intrPreviewOrder: intr.previewOrder,
 		}
 
 		// NOTE: since intr.keyboards are called from within intr.handlers
 		// all methods must have pointer receiver, otherwise
 		// intr.keyboards must be set before intr.handlers
 		intr.keyboards = map[intrEndpoint]keyboardFunc{
-			intrWhere: whereKeyboardFactory(cafeconf),
-			intrWhen:  whenKeyboardFactory(cafeconf),
-			intrWhat:  whatKeyboardFactory(cafeconf),
+			intrWhere:        whereKeyboardFactory(cafeconf),
+			intrWhen:         whenKeyboardFactory(cafeconf),
+			intrWhat:         whatKeyboardFactory(cafeconf),
+			intrPreviewOrder: previewOrderKeyboardFactory(cafeconf),
 		}
 
 	})
@@ -127,6 +131,23 @@ func (i *intrHandler) what(
 	)
 }
 
+func (i *intrHandler) previewOrder(
+	intrData string,
+	update api.Update,
+	order order.Order,
+) {
+	caption := text["preview_order"]
+	p := generatePreviewOrderText(order)
+
+	i.updateMessage(
+		update.CallbackQuery,
+		fmt.Sprintf("%s\n%s", caption, p),
+		intrPreviewOrder,
+		intrData,
+		order,
+	)
+}
+
 func (i *intrHandler) updateMessage(
 	callbackQuery *api.CallbackQuery,
 	msgText string,
@@ -175,11 +196,40 @@ func (i *intrHandler) prepareUpdateKeyboard(
 	intrData string,
 	o order.Order,
 ) api.EditMessageReplyMarkupConfig {
+	replyMarkup := i.keyboards[endpoint](intrData, o)
+
+	// TODO (yb): refactor this logic somehow
+	var backButton []api.InlineKeyboardButton
+	if endpoint == intrWhen {
+		backButton = backKeyboardButton(intrWhere)
+	} else if endpoint == intrWhat {
+		if intrData == "" {
+			backButton = backKeyboardButton(intrWhen)
+		} else {
+			backButton = backKeyboardButton(intrWhat)
+		}
+	} else if endpoint == intrPreviewOrder {
+		backButton = backKeyboardButton(intrWhat)
+	}
+	if backButton != nil {
+		replyMarkup.InlineKeyboard = append(
+			replyMarkup.InlineKeyboard,
+			backButton,
+		)
+	}
+
+	if o.IsReady() {
+		replyMarkup.InlineKeyboard = append(
+			replyMarkup.InlineKeyboard,
+			previewOrderButton(),
+		)
+	}
+
 	return api.EditMessageReplyMarkupConfig{
 		BaseEdit: api.BaseEdit{
 			ChatID:      msgInfo.Chat.ID,
 			MessageID:   msgInfo.MessageID,
-			ReplyMarkup: i.keyboards[endpoint](intrData, o),
+			ReplyMarkup: &replyMarkup,
 		},
 	}
 }

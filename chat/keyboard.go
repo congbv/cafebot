@@ -9,7 +9,7 @@ import (
 )
 
 func whereKeyboardFactory(conf config.CafeConfig) keyboardFunc {
-	return func(intrData string, o order.Order) *api.InlineKeyboardMarkup {
+	return func(intrData string, o order.Order) api.InlineKeyboardMarkup {
 		nextIntr := intrWhen
 
 		hereButton := newIntrButton(
@@ -23,74 +23,69 @@ func whereKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 			o.Takeaway != nil && *o.Takeaway == true,
 		)
 
-		keyboard := api.NewInlineKeyboardMarkup(
+		return api.NewInlineKeyboardMarkup(
 			api.NewInlineKeyboardRow(
 				hereButton,
 				takeawayButton,
 			),
 		)
-
-		return &keyboard
 	}
 }
 
 func whenKeyboardFactory(conf config.CafeConfig) keyboardFunc {
-	return func(intrData string, o order.Order) *api.InlineKeyboardMarkup {
+	return func(intrData string, o order.Order) api.InlineKeyboardMarkup {
 		nextIntr := intrWhat
-		prevIntr := intrWhere
 
 		// we need everything except hour and minute to be 0
 		now, _ := time.Parse("15:04", time.Now().Format("15:04"))
 
 		interval := time.Duration(conf.TimeSlotIntervalMin) * time.Minute
 
-		buttonRows := append(
-			generateTimeSlotsKeyboard(
-				nextIntr,
-				generateTimeSlots(
-					now,
-					interval,
-					time.Time(conf.FirstOrderTime),
-					time.Time(conf.LastOrderTime),
-				),
-				o.Time,
+		buttonRows := generateTimeSlotsKeyboard(
+			nextIntr,
+			generateTimeSlots(
+				now,
+				interval,
+				time.Time(conf.FirstOrderTime),
+				time.Time(conf.LastOrderTime),
 			),
-			backKeyboardButton(prevIntr),
+			o.Time,
 		)
-		keyboard := api.NewInlineKeyboardMarkup(buttonRows...)
-
-		return &keyboard
+		return api.NewInlineKeyboardMarkup(buttonRows...)
 	}
 }
 
 func whatKeyboardFactory(conf config.CafeConfig) keyboardFunc {
-	return func(intrData string, o order.Order) *api.InlineKeyboardMarkup {
-		prevIntr := intrWhen
-
+	return func(intrData string, o order.Order) api.InlineKeyboardMarkup {
 		if intrData == "" {
-			buttonRows := append(
-				generateMenuCategoryButtonRows(
-					conf.Menu.Categories,
-					intrWhat,
-				),
-				backKeyboardButton(prevIntr),
+			buttonRows := generateMenuCategoryButtonRows(
+				conf.Menu.Categories,
+				intrWhat,
 			)
-			keyboard := api.NewInlineKeyboardMarkup(buttonRows...)
-			return &keyboard
+			return api.NewInlineKeyboardMarkup(buttonRows...)
 		}
 
 		meals, ok := conf.Menu.Map[intrData]
 		if !ok {
 			log.Errorf("invalid menu category requested: %s", intrData)
-			return nil
+			return api.InlineKeyboardMarkup{}
 		}
 
-		buttonRows := append(
-			generateMenuMealButtonRows(intrData, meals, intrWhat, o),
-			backKeyboardButton(intrWhat),
+		buttonRows := generateMenuMealButtonRows(intrData, meals, intrWhat, o)
+		return api.NewInlineKeyboardMarkup(buttonRows...)
+	}
+}
+
+func previewOrderKeyboardFactory(conf config.CafeConfig) keyboardFunc {
+	return func(intrData string, o order.Order) api.InlineKeyboardMarkup {
+		return api.NewInlineKeyboardMarkup(
+			api.NewInlineKeyboardRow(
+				api.NewInlineKeyboardButtonData(
+					buttonText["send_order"],
+					cmdFinishEndpoint,
+				),
+			),
 		)
-		keyboard := api.NewInlineKeyboardMarkup(buttonRows...)
-		return &keyboard
 	}
 }
 
@@ -156,12 +151,21 @@ func backKeyboardButton(prevIntr intrEndpoint) []api.InlineKeyboardButton {
 	)
 }
 
+func previewOrderButton() []api.InlineKeyboardButton {
+	return api.NewInlineKeyboardRow(
+		api.NewInlineKeyboardButtonData(
+			buttonText["preview_order"],
+			string(intrPreviewOrder),
+		),
+	)
+}
+
 func newIntrButton(text, data string, selected bool) api.InlineKeyboardButton {
 	if text == "" || data == "" {
 		return api.InlineKeyboardButton{}
 	}
 	if selected {
-		text = buttonText["selected"] + text
+		text = buttonText["selected"] + " " + text
 	}
 	return api.NewInlineKeyboardButtonData(text, data)
 }
