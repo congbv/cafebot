@@ -29,7 +29,7 @@ type (
 )
 
 // intr is concurrent safe intrHandler singleton
-var intr = intrHandler{once: &sync.Once{}}
+var intr = &intrHandler{once: &sync.Once{}}
 
 const (
 	intrWhere intrEndpoint = "where"
@@ -67,7 +67,7 @@ func initIntrHandler(bot *api.BotAPI, cafeconf config.CafeConfig) error {
 	return nil
 }
 
-func (i intrHandler) handle(
+func (i *intrHandler) handle(
 	reqdata string,
 	update api.Update,
 	order order.Order,
@@ -88,7 +88,7 @@ func (i intrHandler) handle(
 	h(reqdata, update, order)
 }
 
-func (i intrHandler) where(
+func (i *intrHandler) where(
 	reqdata string,
 	update api.Update,
 	order order.Order,
@@ -108,7 +108,7 @@ func (i intrHandler) where(
 	}
 }
 
-func (i intrHandler) when(
+func (i *intrHandler) when(
 	reqdata string,
 	update api.Update,
 	order order.Order,
@@ -128,7 +128,7 @@ func (i intrHandler) when(
 	}
 }
 
-func (i intrHandler) what(
+func (i *intrHandler) what(
 	reqdata string,
 	update api.Update,
 	order order.Order,
@@ -138,7 +138,7 @@ func (i intrHandler) what(
 }
 
 // updateText updates text in the last message (from the bot)
-func (i intrHandler) updateText(msgInfo *api.Message, text string) error {
+func (i *intrHandler) updateText(msgInfo *api.Message, text string) error {
 	editText := api.EditMessageTextConfig{
 		BaseEdit: api.BaseEdit{
 			ChatID:    msgInfo.Chat.ID,
@@ -151,7 +151,7 @@ func (i intrHandler) updateText(msgInfo *api.Message, text string) error {
 }
 
 // updateKeyboard updates inline keyboard in the last message (from the bot)
-func (i intrHandler) updateKeyboard(
+func (i *intrHandler) updateKeyboard(
 	msgInfo *api.Message,
 	endpoint intrEndpoint,
 	o order.Order,
