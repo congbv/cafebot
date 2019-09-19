@@ -1,8 +1,5 @@
-run: lint vet
+run:  vet
 	go run ./*.go --log-level=debug
-
-lint:
-	golint ./... 
 
 vet:
 	go vet ./...
