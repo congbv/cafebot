@@ -2,7 +2,6 @@
 package chat
 
 import (
-	"strings"
 	"time"
 
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -90,7 +89,7 @@ func (s *service) handleUpdate(update api.Update) {
 		log.Debugf("handling callback query: %+v", update.CallbackQuery)
 
 		reqdata := update.CallbackQuery.Data
-		intrData, opData, err := splitReqData(reqdata)
+		intrData, opData, err := splitIntrOpData(reqdata)
 		if err != nil {
 			log.Errorf("splitting request data %+v: %s", reqdata, err)
 			return
@@ -112,13 +111,4 @@ func (s *service) handleUpdate(update api.Update) {
 			return
 		}
 	}
-}
-
-func splitReqData(reqdata string) (string, string, error) {
-	splited := strings.Split(reqdata, "?")
-	opdata := ""
-	if len(splited) > 1 {
-		opdata = splited[1]
-	}
-	return splited[0], opdata, nil
 }

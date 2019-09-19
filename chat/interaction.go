@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"strings"
 	"sync"
 
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -76,21 +75,14 @@ func (i *intrHandler) handle(
 		panic("interaction handler is not initialized")
 	}
 
-	parts := strings.Split(reqdata, "/")
-	if len(parts) == 0 {
-		return
-	}
-	h, ok := i.handlers[intrEndpoint(parts[0])]
+	endpoint, data := splitEndpointIntrData(reqdata)
+
+	h, ok := i.handlers[endpoint]
 	if !ok {
 		return
 	}
 
-	var intrData string
-	if len(parts) > 1 {
-		intrData = parts[1]
-	}
-
-	h(intrData, update, order)
+	h(data, update, order)
 }
 
 func (i *intrHandler) where(

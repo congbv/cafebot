@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"bytes"
 	"time"
 
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -74,40 +73,77 @@ func whatKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 				categories = append(categories, cat)
 			}
 			buttonRows := append(
-				generateMenuCategoryButtonRows(categories, intrWhat),
+				generateMenuCategoryButtonRows(
+					categories,
+					intrWhat,
+				),
 				backKeyboardButton(prevIntr),
 			)
 			keyboard := api.NewInlineKeyboardMarkup(buttonRows...)
 			return &keyboard
 		}
 
-		// return category items and generate keyboards that add or
-		// remove meal
+		meals, ok := conf.Menu[intrData]
+		if !ok {
+			log.Errorf("invalid menu category requested: %s", intrData)
+			return nil
+		}
 
-		//buttons := append(
-		//	generateMenuCategoryButtons(conf.Menu, intrWhat),
-		//	backKeyboardButton(prevIntr),
-		//	finishOrderButton(
-		//)
-		//keyboard := api.NewInlineKeyboardMarkup(buttons...)
-		//return &keyboard
-
-		return nil
+		buttonRows := append(
+			generateMenuMealButtonRows(intrData, meals, intrWhat, o),
+			backKeyboardButton(prevIntr),
+		)
+		keyboard := api.NewInlineKeyboardMarkup(buttonRows...)
+		return &keyboard
 	}
 }
 
 func generateMenuCategoryButtonRows(
 	categories []string,
-	endpoint intrEndpoint,
+	nextIntr intrEndpoint,
 ) [][]api.InlineKeyboardButton {
 	buttonRows := make([][]api.InlineKeyboardButton, 0, len(categories))
 	for _, category := range categories {
+		intrData := newIntrData(nextIntr, category, "", "")
 		buttonRows = append(
 			buttonRows,
 			[]api.InlineKeyboardButton{
 				api.NewInlineKeyboardButtonData(
 					category,
-					newIntrData(endpoint, category, "", ""),
+					intrData,
+				),
+			},
+		)
+	}
+	return buttonRows
+}
+
+func generateMenuMealButtonRows(
+	category string,
+	meals []string,
+	nextIntr intrEndpoint,
+	o order.Order,
+) [][]api.InlineKeyboardButton {
+	buttonRows := make([][]api.InlineKeyboardButton, 0, len(meals))
+	for _, meal := range meals {
+		mealOp := opAddMeal
+		selected := contains(o.Meal, meal)
+		if selected {
+			mealOp = opRemoveMeal
+		}
+
+		buttonRows = append(
+			buttonRows,
+			[]api.InlineKeyboardButton{
+				newIntrButton(
+					meal,
+					newIntrData(
+						nextIntr,
+						category,
+						mealOp,
+						meal,
+					),
+					selected,
 				),
 			},
 		)
@@ -124,27 +160,6 @@ func backKeyboardButton(prevIntr intrEndpoint) []api.InlineKeyboardButton {
 	)
 }
 
-func newIntrData(
-	e intrEndpoint,
-	intrData string,
-	op orderOp,
-	opval string,
-) string {
-	buf := new(bytes.Buffer)
-	buf.WriteString(string(e))
-	if intrData != "" {
-		buf.WriteRune('/')
-		buf.WriteString(intrData)
-	}
-	if op != "" && opval != "" {
-		buf.WriteRune('?')
-		buf.WriteString(string(op))
-		buf.WriteRune('=')
-		buf.WriteString(opval)
-	}
-	return buf.String()
-}
-
 func newIntrButton(text, data string, selected bool) api.InlineKeyboardButton {
 	if text == "" || data == "" {
 		return api.InlineKeyboardButton{}
@@ -153,4 +168,13 @@ func newIntrButton(text, data string, selected bool) api.InlineKeyboardButton {
 		text = buttonText["selected"] + text
 	}
 	return api.NewInlineKeyboardButtonData(text, data)
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
