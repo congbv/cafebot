@@ -1,6 +1,7 @@
 package order
 
 import (
+	"bytes"
 	"errors"
 	"sync"
 	"time"
@@ -96,6 +97,32 @@ func (s *inMemService) SetTakeaway(u *api.User, takeaway bool) *Order {
 	return order
 }
 
+type ErrNotComplete struct {
+	noMeal, noTime, noTakeaway bool
+}
+
+func (e ErrNotComplete) Error() string {
+	if !e.noMeal && !e.noTime && !e.noTakeaway {
+		return ""
+	}
+	buf := new(bytes.Buffer)
+	buf.WriteString("order has no ")
+	if e.noMeal {
+		buf.WriteString("meal ")
+	}
+	if e.noTime {
+		buf.WriteString("time ")
+	}
+	if e.noTakeaway {
+		buf.WriteString("takeaway")
+	}
+	return buf.String()
+}
+
+func (e ErrNotComplete) OrderNotComplete() bool {
+	return e.noMeal || e.noTime || e.noTakeaway
+}
+
 func (s *inMemService) FinishOrder(u *api.User) (*Order, error) {
 	if u == nil {
 		return nil, errors.New("nil user provided")
@@ -108,14 +135,15 @@ func (s *inMemService) FinishOrder(u *api.User) (*Order, error) {
 		return nil, errors.New("no order for such user")
 	}
 
+	var err ErrNotComplete
 	if len(order.Meal) == 0 {
-		return nil, errors.New("no meal selected")
+		err.noMeal = true
 	}
 	if order.Time == nil {
-		return nil, errors.New("no time selected")
+		err.noTime = true
 	}
 	if order.Takeaway == nil {
-		return nil, errors.New("no place selected")
+		err.noTakeaway = true
 	}
 
 	s.mu.Lock()
@@ -123,6 +151,10 @@ func (s *inMemService) FinishOrder(u *api.User) (*Order, error) {
 	s.mu.Unlock()
 
 	log.Debugf("finishing order: %+v", order)
+
+	if err.OrderNotComplete() {
+		return nil, err
+	}
 
 	return order, nil
 }
