@@ -43,12 +43,14 @@ func whenKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 		// we need everything except hour and minute to be 0
 		now, _ := time.Parse("15:04", time.Now().Format("15:04"))
 
+		interval := time.Duration(conf.TimeSlotIntervalMin) * time.Minute
+
 		buttonRows := append(
 			generateTimeSlotsKeyboard(
 				nextIntr,
 				generateTimeSlots(
 					now,
-					conf.TimeSlotInterval,
+					interval,
 					time.Time(conf.FirstOrderTime),
 					time.Time(conf.LastOrderTime),
 				),
