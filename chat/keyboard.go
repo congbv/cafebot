@@ -1,7 +1,7 @@
 package chat
 
 import (
-	"fmt"
+	"bytes"
 	"time"
 
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -10,17 +10,17 @@ import (
 )
 
 func whereKeyboardFactory(conf config.CafeConfig) keyboardFunc {
-	return func(o order.Order) *api.InlineKeyboardMarkup {
+	return func(intrData string, o order.Order) *api.InlineKeyboardMarkup {
 		nextIntr := intrWhen
 
 		hereButton := newIntrButton(
 			buttonText["here"],
-			newIntrData(nextIntr, opWhere, opWhereHere),
+			newIntrData(nextIntr, "", opWhere, opWhereHere),
 			o.Takeaway != nil && *o.Takeaway == false,
 		)
 		takeawayButton := newIntrButton(
 			buttonText["takeaway"],
-			newIntrData(nextIntr, opWhere, opWhereTakeaway),
+			newIntrData(nextIntr, "", opWhere, opWhereTakeaway),
 			o.Takeaway != nil && *o.Takeaway == true,
 		)
 
@@ -36,7 +36,7 @@ func whereKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 }
 
 func whenKeyboardFactory(conf config.CafeConfig) keyboardFunc {
-	return func(o order.Order) *api.InlineKeyboardMarkup {
+	return func(intrData string, o order.Order) *api.InlineKeyboardMarkup {
 		nextIntr := intrWhat
 		prevIntr := intrWhere
 
@@ -65,9 +65,54 @@ func whenKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 }
 
 func whatKeyboardFactory(conf config.CafeConfig) keyboardFunc {
-	return func(o order.Order) *api.InlineKeyboardMarkup {
+	return func(intrData string, o order.Order) *api.InlineKeyboardMarkup {
+		prevIntr := intrWhen
+
+		if intrData == "" {
+			categories := make([]string, 0, len(conf.Menu))
+			for cat := range conf.Menu {
+				categories = append(categories, cat)
+			}
+			buttonRows := append(
+				generateMenuCategoryButtonRows(categories, intrWhat),
+				backKeyboardButton(prevIntr),
+			)
+			keyboard := api.NewInlineKeyboardMarkup(buttonRows...)
+			return &keyboard
+		}
+
+		// return category items and generate keyboards that add or
+		// remove meal
+
+		//buttons := append(
+		//	generateMenuCategoryButtons(conf.Menu, intrWhat),
+		//	backKeyboardButton(prevIntr),
+		//	finishOrderButton(
+		//)
+		//keyboard := api.NewInlineKeyboardMarkup(buttons...)
+		//return &keyboard
+
 		return nil
 	}
+}
+
+func generateMenuCategoryButtonRows(
+	categories []string,
+	endpoint intrEndpoint,
+) [][]api.InlineKeyboardButton {
+	buttonRows := make([][]api.InlineKeyboardButton, 0, len(categories))
+	for _, category := range categories {
+		buttonRows = append(
+			buttonRows,
+			[]api.InlineKeyboardButton{
+				api.NewInlineKeyboardButtonData(
+					category,
+					newIntrData(endpoint, category, "", ""),
+				),
+			},
+		)
+	}
+	return buttonRows
 }
 
 func backKeyboardButton(prevIntr intrEndpoint) []api.InlineKeyboardButton {
@@ -79,8 +124,25 @@ func backKeyboardButton(prevIntr intrEndpoint) []api.InlineKeyboardButton {
 	)
 }
 
-func newIntrData(e intrEndpoint, op orderOp, opval string) string {
-	return fmt.Sprintf("%s?%s=%s", e, op, opval)
+func newIntrData(
+	e intrEndpoint,
+	intrData string,
+	op orderOp,
+	opval string,
+) string {
+	buf := new(bytes.Buffer)
+	buf.WriteString(string(e))
+	if intrData != "" {
+		buf.WriteRune('/')
+		buf.WriteString(intrData)
+	}
+	if op != "" && opval != "" {
+		buf.WriteRune('?')
+		buf.WriteString(string(op))
+		buf.WriteRune('=')
+		buf.WriteString(opval)
+	}
+	return buf.String()
 }
 
 func newIntrButton(text, data string, selected bool) api.InlineKeyboardButton {

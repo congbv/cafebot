@@ -34,7 +34,7 @@ func generateTimeSlotsKeyboard(
 			slot := slots[i*numInRow+j]
 			buttons[i][j] = newIntrButton(
 				slot,
-				newIntrData(nextIntr, opWhen, slot),
+				newIntrData(nextIntr, "", opWhen, slot),
 				selectedSlot == slot,
 			)
 		}

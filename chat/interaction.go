@@ -23,7 +23,7 @@ type (
 	}
 
 	intrFunc     func(string, api.Update, order.Order)
-	keyboardFunc func(order.Order) *api.InlineKeyboardMarkup
+	keyboardFunc func(intrData string, o order.Order) *api.InlineKeyboardMarkup
 
 	intrEndpoint string
 )
@@ -85,56 +85,77 @@ func (i *intrHandler) handle(
 		return
 	}
 
-	h(reqdata, update, order)
+	var intrData string
+	if len(parts) > 1 {
+		intrData = parts[1]
+	}
+
+	h(intrData, update, order)
 }
 
 func (i *intrHandler) where(
-	reqdata string,
+	intrData string,
 	update api.Update,
 	order order.Order,
 ) {
-	msgInfo := update.CallbackQuery.Message
-	text := text["where?"]
-
-	err := i.updateText(msgInfo, text)
-	if err != nil {
-		log.Errorf("updating text for %+v: %v", msgInfo, err)
-		return
-	}
-
-	err = i.updateKeyboard(msgInfo, intrWhere, order)
-	if err != nil {
-		log.Errorf("updating keyboard for %+v: %v", msgInfo, err)
-	}
+	i.updateMessage(
+		update.CallbackQuery,
+		text["where?"],
+		intrWhere,
+		intrData,
+		order,
+	)
 }
 
 func (i *intrHandler) when(
-	reqdata string,
+	intrData string,
 	update api.Update,
 	order order.Order,
 ) {
-	msgInfo := update.CallbackQuery.Message
-	text := text["when?"]
+	i.updateMessage(
+		update.CallbackQuery,
+		text["when?"],
+		intrWhen,
+		intrData,
+		order,
+	)
+}
 
-	err := i.updateText(msgInfo, text)
+func (i *intrHandler) what(
+	intrData string,
+	update api.Update,
+	order order.Order,
+) {
+	i.updateMessage(
+		update.CallbackQuery,
+		text["what?"],
+		intrWhat,
+		intrData,
+		order,
+	)
+}
+
+func (i *intrHandler) updateMessage(
+	callbackQuery *api.CallbackQuery,
+	msgText string,
+	endpoint intrEndpoint,
+	intrData string,
+	o order.Order,
+) {
+	// remove spiner at the top right corner of the button
+	i.bot.AnswerCallbackQuery(api.NewCallback(callbackQuery.ID, ""))
+
+	msgInfo := callbackQuery.Message
+
+	err := i.updateText(msgInfo, msgText)
 	if err != nil {
 		log.Errorf("updating text for %+v: %v", msgInfo, err)
 		return
 	}
-
-	err = i.updateKeyboard(msgInfo, intrWhen, order)
+	err = i.updateKeyboard(msgInfo, endpoint, intrData, o)
 	if err != nil {
 		log.Errorf("updating keyboard for %+v: %v", msgInfo, err)
 	}
-}
-
-func (i *intrHandler) what(
-	reqdata string,
-	update api.Update,
-	order order.Order,
-) {
-
-	// TODO: add stuff here
 }
 
 // updateText updates text in the last message (from the bot)
@@ -154,13 +175,14 @@ func (i *intrHandler) updateText(msgInfo *api.Message, text string) error {
 func (i *intrHandler) updateKeyboard(
 	msgInfo *api.Message,
 	endpoint intrEndpoint,
+	intrData string,
 	o order.Order,
 ) error {
 	editKeyboard := api.EditMessageReplyMarkupConfig{
 		BaseEdit: api.BaseEdit{
 			ChatID:      msgInfo.Chat.ID,
 			MessageID:   msgInfo.MessageID,
-			ReplyMarkup: i.keyboards[endpoint](o),
+			ReplyMarkup: i.keyboards[endpoint](intrData, o),
 		},
 	}
 	_, err := i.bot.Send(editKeyboard)
