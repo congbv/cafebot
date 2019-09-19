@@ -1,6 +1,6 @@
 {
-	"open_time": "09:00",
-	"close_time": "21:00",
+	"first_order_time": "09:30",
+	"last_order_time": "20:30",
 	"time_slot_interval": 15,
 	"menu": {
 		"🥗 Салати": [

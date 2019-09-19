@@ -49,8 +49,8 @@ func whenKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 				generateTimeSlots(
 					now,
 					conf.TimeSlotInterval,
-					time.Time(conf.OpenTime),
-					time.Time(conf.CloseTime),
+					time.Time(conf.FirstOrderTime),
+					time.Time(conf.LastOrderTime),
 				),
 				o.Time,
 			),
@@ -82,6 +82,9 @@ func newIntrData(e intrEndpoint, op orderOp, opval string) string {
 }
 
 func newIntrButton(text, data string, selected bool) api.InlineKeyboardButton {
+	if text == "" || data == "" {
+		return api.InlineKeyboardButton{}
+	}
 	if selected {
 		text = buttonText["selected"] + text
 	}

@@ -8,8 +8,8 @@ import (
 )
 
 type CafeConfig struct {
-	OpenTime         CafeTime      `json:"open_time"`
-	CloseTime        CafeTime      `json:"close_time"`
+	FirstOrderTime   CafeTime      `json:"first_order_time"`
+	LastOrderTime    CafeTime      `json:"last_order_time"`
 	TimeSlotInterval time.Duration `json:"time_slot_interval"`
 
 	Menu map[string][]string `json:"menu"`
