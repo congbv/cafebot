@@ -52,6 +52,10 @@ func (s *inMemService) InitOrder(u *api.User) *Order {
 	return order
 }
 
+func (s *inMemService) Get(u *api.User) *Order {
+	return s.get(u)
+}
+
 func (s *inMemService) AddMeal(u *api.User, meal string) *Order {
 	order := s.get(u)
 	order.Meal = append(order.Meal, meal)

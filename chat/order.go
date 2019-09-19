@@ -22,15 +22,15 @@ const (
 
 // processOrder handles user order updates
 func (s *service) processOrder(u *api.User, opData string) order.Order {
+	o := s.order.Get(u)
+
 	splited := strings.Split(opData, "=")
 	if len(splited) < 2 {
-		return order.Order{}
+		return *o
 	}
 
 	op := orderOp(splited[0])
 	val := splited[1]
-
-	var o *order.Order
 
 	switch op {
 	case opAddMeal:
