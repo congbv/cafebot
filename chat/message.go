@@ -3,10 +3,10 @@ package chat
 var (
 	buttonText = map[string]string{
 		"new_order": "Сделать заказ",
-		"here":      "В кафе",
-		"takeaway":  "На вынос",
+		"here":      "🏠 В кафе",
+		"takeaway":  "🚶‍♂️ На вынос",
 
-		"back": "Назад",
+		"back": "⬅️ Назад",
 
 		"selected": "✅ ",
 	}
