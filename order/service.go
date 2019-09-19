@@ -17,6 +17,10 @@ type Order struct {
 	Time     *time.Time
 }
 
+func (o Order) IsReady() bool {
+	return len(o.Meal) > 0 && o.Time != nil && o.Takeaway != nil
+}
+
 // inMemService is the most naive in-memory
 // implementation of the Service
 type inMemService struct {
