@@ -14,16 +14,16 @@ order to be ready.
 ```
 $ git clone git@github.com:yarikbratashchuk/cafebot.git && cd cafebot
 ```
-5. Build it from source
+5. Build it from source (requires go toolchain to be installed)
 ```
 $ make install 
 ```
 6. Check installation
 ```
-$ ./cafebot --help
+$ cafebot --help
 ```
 7. Edit `cafe.json` config file to match your cafe timetable and menu
 8. Run app and play with it
 ```
-$ ./cafebot --tg-api-token=YOUR_TELEGRAM_BOT_API_TOKEN
+$ cafebot --tg-api-token=YOUR_TELEGRAM_BOT_API_TOKEN
 ```
