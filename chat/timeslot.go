@@ -50,10 +50,14 @@ func generateTimeSlots(
 	upperLimit time.Time,
 ) []string {
 	totalSlotNum := 12
-	vals := make([]string, totalSlotNum)
+	vals := make([]string, 0, totalSlotNum)
 
 	val := startFrom.Round(interval)
-	if val.Before(startFrom) {
+	if val.After(upperLimit) || val.Equal(upperLimit) {
+		return []string{}
+	}
+
+	if val.Before(startFrom) || val.Equal(startFrom) {
 		val = val.Add(interval)
 	}
 	if val.Before(lowerLimit) {
@@ -61,10 +65,10 @@ func generateTimeSlots(
 	}
 
 	for i := 0; i < totalSlotNum; i++ {
-		vals[i] = val.Format("15:04")
-		if val.Equal(upperLimit) || val.After(upperLimit) {
+		if val.After(upperLimit) {
 			break
 		}
+		vals = append(vals, val.Format("15:04"))
 		val = val.Add(interval)
 	}
 
