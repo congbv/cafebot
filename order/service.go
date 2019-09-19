@@ -17,7 +17,7 @@ type Order struct {
 	Time     *time.Time
 }
 
-// inMemService is the most naive in memory
+// inMemService is the most naive in-memory
 // implementation of the Service
 type inMemService struct {
 	conf   config.Config

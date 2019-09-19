@@ -7,8 +7,8 @@ import (
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-// cmdHandler is responsible for handling chat commands
 type (
+	// cmdHandler is responsible for handling chat commands
 	cmdHandler struct {
 		once *sync.Once
 
@@ -31,6 +31,8 @@ const (
 	cmdHelpEndpoint  = "help"
 )
 
+// initCmdHandler initializes cmd singleton
+// It must be run once before calling cmd.handle
 func initCmdHandler(bot *api.BotAPI) error {
 	log.Info("initializing cmd handler")
 

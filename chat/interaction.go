@@ -37,6 +37,8 @@ const (
 	intrWhat  intrEndpoint = "what"
 )
 
+// initIntrHandler initializes intr singleton
+// It must be run once before calling intr.handle
 func initIntrHandler(bot *api.BotAPI, cafeconf config.CafeConfig) error {
 	log.Info("initializing interaction handler")
 
@@ -135,6 +137,7 @@ func (i intrHandler) what(
 	// TODO: add stuff here
 }
 
+// updateText updates text in the last message (from the bot)
 func (i intrHandler) updateText(msgInfo *api.Message, text string) error {
 	editText := api.EditMessageTextConfig{
 		BaseEdit: api.BaseEdit{
@@ -147,6 +150,7 @@ func (i intrHandler) updateText(msgInfo *api.Message, text string) error {
 	return err
 }
 
+// updateKeyboard updates inline keyboard in the last message (from the bot)
 func (i intrHandler) updateKeyboard(
 	msgInfo *api.Message,
 	endpoint intrEndpoint,
