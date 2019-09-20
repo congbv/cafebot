@@ -15,6 +15,9 @@ type CafeConfig struct {
 	LastOrderTime       CafeTime `json:"last_order_time"`
 	TimeSlotIntervalMin int      `json:"time_slot_interval_min"`
 
+	// TODO (yb): add timezone
+	// not the issue if the server and a cafe is in the same timezone
+
 	Menu Menu `json:"menu"`
 }
 
