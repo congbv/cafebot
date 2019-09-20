@@ -4,6 +4,10 @@ Cafebot is a [telegram](https://telegram.org/) bot for making orders in a local 
 Its handy if you don't want to make an order by a call or sit and wait for your
 order to be ready.
 
+## Demo
+
+![cafebot](https://user-images.githubusercontent.com/12980380/65349064-3f75e800-dbeb-11e9-8c11-8e4a8ca956dc.gif)
+
 ## Usage instruction
 
 1. Open [telegram](https://play.google.com/store/apps/details?id=org.telegram.messenger) app
@@ -11,15 +15,15 @@ order to be ready.
 3. Copy your bot `API Token`
 4. Clone this repo
 ```
-$ git clone git@github.com:yarikbratashchuk/cafebot.git && cd cafebot
+git clone git@github.com:yarikbratashchuk/cafebot.git && cd cafebot
 ```
 5. Build it from source (requires go toolchain to be installed)
 ```
-$ make install 
+make install 
 ```
 6. Check installation
 ```
-$ cafebot --help
+cafebot --help
 Usage:
   cafebot [OPTIONS]
 
@@ -36,5 +40,5 @@ Usage:
 7. Edit `cafe.json` config file to match your particular cafe
 8. Run app and play with it
 ```
-$ cafebot --tg-api-token=YOUR_TELEGRAM_BOT_API_TOKEN
+cafebot --tg-api-token=YOUR_TELEGRAM_BOT_API_TOKEN
 ```
