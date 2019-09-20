@@ -71,7 +71,12 @@ func whatKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 			return api.InlineKeyboardMarkup{}
 		}
 
-		buttonRows := generateMenuMealButtonRows(intrData, meals, intrWhat, o)
+		buttonRows := generateMenuMealButtonRows(
+			intrData,
+			meals,
+			intrWhat,
+			o,
+		)
 		return api.NewInlineKeyboardMarkup(buttonRows...)
 	}
 }
@@ -81,8 +86,8 @@ func previewKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 		return api.NewInlineKeyboardMarkup(
 			api.NewInlineKeyboardRow(
 				api.NewInlineKeyboardButtonData(
-					buttonText["send_order"],
-					string(intrFinish),
+					buttonText["send"],
+					string(intrSent),
 				),
 			),
 		)
@@ -142,17 +147,16 @@ func generateMenuMealButtonRows(
 	return buttonRows
 }
 
-func backKeyboardButton(prevIntr intrEndpoint) *api.InlineKeyboardButton {
-	button := api.NewInlineKeyboardButtonData(
+func backKeyboardButton(prevIntr intrEndpoint) api.InlineKeyboardButton {
+	return api.NewInlineKeyboardButtonData(
 		buttonText["back"],
 		string(prevIntr),
 	)
-	return &button
 }
 
 func previewButton() api.InlineKeyboardButton {
 	return api.NewInlineKeyboardButtonData(
-		buttonText["preview_order"],
+		buttonText["preview"],
 		string(intrPreview),
 	)
 }

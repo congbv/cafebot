@@ -36,7 +36,7 @@ const (
 	intrWhen    intrEndpoint = "when"
 	intrWhat    intrEndpoint = "what"
 	intrPreview intrEndpoint = "preview"
-	intrFinish  intrEndpoint = "finish"
+	intrSent    intrEndpoint = "sent"
 )
 
 // initIntrHandler initializes intr singleton
@@ -55,6 +55,7 @@ func initIntrHandler(bot *api.BotAPI, cafeconf config.CafeConfig) error {
 			intrWhen:    intr.when,
 			intrWhat:    intr.what,
 			intrPreview: intr.preview,
+			intrSent:    intr.sent,
 		}
 
 		// NOTE: since intr.keyboards are called from within intr.handlers
@@ -149,6 +150,24 @@ func (i *intrHandler) preview(
 	)
 }
 
+func (i *intrHandler) sent(
+	intrData string,
+	update api.Update,
+	order order.Order,
+) {
+	msgText := fmt.Sprintf(
+		"%s\n\n%s",
+		text["sent"],
+		generatePreviewText(order),
+	)
+	msgConfig := update.CallbackQuery.Message
+	msg := api.NewMessage(msgConfig.Chat.ID, msgText)
+	msg.ParseMode = api.ModeHTML
+
+	i.bot.Send(api.NewDeleteMessage(msgConfig.Chat.ID, msgConfig.MessageID))
+	i.bot.Send(msg)
+}
+
 func (i *intrHandler) updateMessage(
 	callbackQuery *api.CallbackQuery,
 	msgText string,
@@ -186,7 +205,8 @@ func (i *intrHandler) prepareUpdateText(
 			ChatID:    msgInfo.Chat.ID,
 			MessageID: msgInfo.MessageID,
 		},
-		Text: text,
+		Text:      text,
+		ParseMode: api.ModeHTML,
 	}
 }
 
@@ -197,11 +217,16 @@ func (i *intrHandler) prepareUpdateKeyboard(
 	intrData string,
 	o order.Order,
 ) api.EditMessageReplyMarkupConfig {
-	replyMarkup := i.keyboards[endpoint](intrData, o)
+	var replyMarkup *api.InlineKeyboardMarkup
+	keyboardFactory, ok := i.keyboards[endpoint]
+	if ok {
+		markup := keyboardFactory(intrData, o)
+		replyMarkup = &markup
+	}
 
 	// TODO (yb): refactor this logic somehow
 	var lastButtonRow []api.InlineKeyboardButton
-	var backButton *api.InlineKeyboardButton
+	var backButton api.InlineKeyboardButton
 	if endpoint == intrWhen {
 		backButton = backKeyboardButton(intrWhere)
 	} else if endpoint == intrWhat {
@@ -213,24 +238,27 @@ func (i *intrHandler) prepareUpdateKeyboard(
 	} else if endpoint == intrPreview {
 		backButton = backKeyboardButton(intrWhat)
 	}
-	if backButton != nil {
-		lastButtonRow = append(lastButtonRow, *backButton)
+	emptyButton := api.InlineKeyboardButton{}
+	if backButton != emptyButton {
+		lastButtonRow = append(lastButtonRow, backButton)
 	}
 
 	if o.IsReady() && endpoint != intrPreview {
 		lastButtonRow = append(lastButtonRow, previewButton())
 	}
 
-	replyMarkup.InlineKeyboard = append(
-		replyMarkup.InlineKeyboard,
-		lastButtonRow,
-	)
+	if replyMarkup != nil && len(lastButtonRow) != 0 {
+		replyMarkup.InlineKeyboard = append(
+			replyMarkup.InlineKeyboard,
+			lastButtonRow,
+		)
+	}
 
 	return api.EditMessageReplyMarkupConfig{
 		BaseEdit: api.BaseEdit{
 			ChatID:      msgInfo.Chat.ID,
 			MessageID:   msgInfo.MessageID,
-			ReplyMarkup: &replyMarkup,
+			ReplyMarkup: replyMarkup,
 		},
 	}
 }

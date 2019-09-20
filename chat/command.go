@@ -77,10 +77,11 @@ func (c *cmdHandler) start(update api.Update) error {
 		update.Message.Chat.ID,
 		text["start"],
 	)
+	msg.ParseMode = api.ModeHTML
 	msg.ReplyMarkup = api.NewInlineKeyboardMarkup(
 		api.NewInlineKeyboardRow(
 			api.NewInlineKeyboardButtonData(
-				buttonText["new_order"],
+				buttonText["new"],
 				string(intrWhere),
 			),
 		),
