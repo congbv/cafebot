@@ -95,8 +95,11 @@ func (s *service) handleUpdate(update api.Update) {
 		}
 
 		order, finished := s.processOrder(q.From, opData)
+		if order == nil {
+			return
+		}
 		if finished {
-			err = s.sendOrderToChannel(s.conf.Cafe.OrderChan, order)
+			err = s.sendOrderToChannel(s.conf.Cafe.OrderChan, *order)
 			if err != nil {
 				log.Errorf(
 					"sending order to cafe: %s, order: %+v",
@@ -107,7 +110,7 @@ func (s *service) handleUpdate(update api.Update) {
 				return
 			}
 		}
-		intr.handle(intrData, update, order)
+		intr.handle(intrData, update, *order)
 
 		return
 	}

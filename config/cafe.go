@@ -18,6 +18,9 @@ type CafeConfig struct {
 	// TODO (yb): add timezone
 	// not the issue if the server and a cafe is in the same timezone
 
+	// OrderChan is a public channel name in a form of @channelname
+	// or a private channel id. See how to get private channel id:
+	// https://github.com/python-telegram-bot/python-telegram-bot/issues/538
 	OrderChan string `json:"orders_channel"`
 	Menu      Menu   `json:"menu"`
 }

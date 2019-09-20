@@ -82,7 +82,7 @@ func (c *cmdHandler) start(update api.Update) error {
 		api.NewInlineKeyboardRow(
 			api.NewInlineKeyboardButtonData(
 				buttonText["new"],
-				string(intrWhere),
+				newIntrData(intrWhere, "", opInit, "1"),
 			),
 		),
 	)

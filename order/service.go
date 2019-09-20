@@ -174,7 +174,7 @@ func (s *inMemService) get(u *api.User) *Order {
 	order, ok := s.orders[u.ID]
 	s.mu.RUnlock()
 	if !ok {
-		return s.InitOrder(u)
+		return nil
 	}
 	return order
 }
