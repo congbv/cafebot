@@ -35,13 +35,10 @@ func NewService(
 		func() { err = initCmdHandler(bot) },
 		func() { err = initIntrHandler(bot, conf.Cafe) },
 	} {
-		if err != nil {
-			continue
-		}
 		f()
-	}
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	s := &service{
