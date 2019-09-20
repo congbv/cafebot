@@ -18,8 +18,8 @@ type CafeConfig struct {
 	// TODO (yb): add timezone
 	// not the issue if the server and a cafe is in the same timezone
 
-	Chan string `json:"orders_channel"`
-	Menu Menu   `json:"menu"`
+	OrderChan string `json:"orders_channel"`
+	Menu      Menu   `json:"menu"`
 }
 
 // CafeTime exists only because we need to unmarshal string of type HH:MM into
