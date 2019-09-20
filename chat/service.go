@@ -128,7 +128,7 @@ func (s *service) sendOrderToChannel(channel string, o order.Order) error {
 	log.Debugf("sending order to cafe: u: %s, o: %+v", o.User.UserName, o)
 
 	text := fmt.Sprintf(
-		"<b>%s %s\n(@%s)</b>\n\n%s",
+		"<b>%s %s\n@%s</b>\n\n%s",
 		o.User.FirstName,
 		o.User.LastName,
 		o.User.UserName,
