@@ -1,11 +1,11 @@
-🥘 Cafebot
+# 🥘 Cafebot
 ====
 
 Cafebot is a [telegram](https://telegram.org/) bot for making orders in a local cafe. 
 Its handy if you don't want to make an order my the call or sit and wait for your
 order to be ready.
 
-### Usage instruction
+## Usage instruction
 
 1. Open [telegram](https://play.google.com/store/apps/details?id=org.telegram.messenger) app
 2. Chat with @BotFather -> create your own bot
