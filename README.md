@@ -1,8 +1,7 @@
 # 🥘 Cafebot
-====
 
 Cafebot is a [telegram](https://telegram.org/) bot for making orders in a local cafe. 
-Its handy if you don't want to make an order my the call or sit and wait for your
+Its handy if you don't want to make an order by the call or sit and wait for your
 order to be ready.
 
 ## Usage instruction
@@ -34,7 +33,7 @@ Usage:
     -h, --help      Show this help message
 
 ```
-7. Edit `cafe.json` config file to match your cafe timetable and menu
+7. Edit `cafe.json` config file to match your particular cafe
 8. Run app and play with it
 ```
 $ cafebot --tg-api-token=YOUR_TELEGRAM_BOT_API_TOKEN
