@@ -8,13 +8,13 @@ import (
 
 var (
 	buttonText = map[string]string{
-		"new_order":     "📝 Сделать заказ",
-		"here":          "🏠 В кафе",
-		"takeaway":      "🚶‍♂️ На вынос",
-		"back":          "⬅️ Назад",
-		"preview_order": "🛒 Посмотреть свой заказ",
-		"send_order":    "💌 Отправить свой заказ",
-		"selected":      "✅",
+		"new_order": "📝 Сделать заказ",
+		"here":      "🏠 В кафе",
+		"takeaway":  "🚶‍♂️ На вынос",
+		"back":      "⬅️ Назад",
+		"preview":   "🛒 Посмотреть свой заказ",
+		"send":      "✉️ Отправить",
+		"selected":  "✅",
 	}
 
 	text = map[string]string{
@@ -22,10 +22,10 @@ var (
 		"start": "Привет 🖖. Я готов принять твой заказ 👌",
 		"wrong": "Сделайте заказ по телефону, я не понимаю вас 😞",
 
-		"where?":        "В кафе или на вынос?",
-		"when?":         "На который час готовить?",
-		"what?":         "Что вы будете есть?",
-		"preview_order": "Посмотрите свой заказ.",
+		"where?":  "В кафе или на вынос?",
+		"when?":   "На который час готовить?",
+		"what?":   "Что вы будете есть?",
+		"preview": "Проверьте свой заказ затем нажмите 'Отправить'",
 
 		"time_preview_prefix":     "🕑",
 		"order_preview_prefix":    "🥘",
@@ -34,33 +34,29 @@ var (
 	}
 )
 
-func generatePreviewOrderText(o order.Order) string {
+func generatePreviewText(o order.Order) string {
 	buf := new(bytes.Buffer)
 
 	if *o.Takeaway {
-		buf.WriteString(text["here_preview_prefix"])
-		buf.WriteRune(' ')
-		buf.WriteString(buttonText["here"])
-	} else {
-		buf.WriteString(text["here_preview_prefix"])
-		buf.WriteRune(' ')
 		buf.WriteString(buttonText["takeaway"])
+	} else {
+		buf.WriteString(buttonText["here"])
 	}
-	buf.WriteRune('\n')
+	buf.WriteString("\n")
 
 	buf.WriteString(text["time_preview_prefix"])
-	buf.WriteRune(' ')
+	buf.WriteString(" ")
 	buf.WriteString(o.Time.Format("15:04"))
-	buf.WriteRune('\n')
+	buf.WriteString("\n")
 
 	buf.WriteString(text["order_preview_prefix"])
-	buf.WriteRune(' ')
+	buf.WriteString(" ")
 	buf.WriteString(o.Meal[0])
-	buf.WriteRune('\n')
+	buf.WriteString("\n")
 	if len(o.Meal) > 1 {
 		for i := 1; i < len(o.Meal); i++ {
-			buf.WriteString("   ")
-			buf.WriteString(o.Meal[0])
+			buf.WriteString("       ")
+			buf.WriteString(o.Meal[i])
 			buf.WriteRune('\n')
 		}
 	}

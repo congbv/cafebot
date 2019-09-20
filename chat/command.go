@@ -27,9 +27,8 @@ var (
 )
 
 const (
-	cmdStartEndpoint  = "start"
-	cmdFinishEndpoint = "finish"
-	cmdHelpEndpoint   = "help"
+	cmdStartEndpoint = "start"
+	cmdHelpEndpoint  = "help"
 )
 
 // initCmdHandler initializes cmd singleton
@@ -43,9 +42,8 @@ func initCmdHandler(bot *api.BotAPI) error {
 	cmd.once.Do(func() {
 		cmd.bot = bot
 		cmd.commands = map[string]cmdFunc{
-			cmdStartEndpoint:  cmd.start,
-			cmdHelpEndpoint:   cmd.help,
-			cmdFinishEndpoint: cmd.finish,
+			cmdStartEndpoint: cmd.start,
+			cmdHelpEndpoint:  cmd.help,
 		}
 	})
 	return nil
@@ -90,11 +88,6 @@ func (c *cmdHandler) start(update api.Update) error {
 
 	_, err := c.bot.Send(msg)
 	return err
-}
-
-func (c *cmdHandler) finish(update api.Update) error {
-	// TODO: add sending order logic here
-	return nil
 }
 
 func (c *cmdHandler) wrong(update api.Update) error {

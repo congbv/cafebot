@@ -32,10 +32,11 @@ type (
 var intr = &intrHandler{once: &sync.Once{}}
 
 const (
-	intrWhere        intrEndpoint = "where"
-	intrWhen         intrEndpoint = "when"
-	intrWhat         intrEndpoint = "what"
-	intrPreviewOrder intrEndpoint = "preview_order"
+	intrWhere   intrEndpoint = "where"
+	intrWhen    intrEndpoint = "when"
+	intrWhat    intrEndpoint = "what"
+	intrPreview intrEndpoint = "preview"
+	intrFinish  intrEndpoint = "finish"
 )
 
 // initIntrHandler initializes intr singleton
@@ -50,20 +51,20 @@ func initIntrHandler(bot *api.BotAPI, cafeconf config.CafeConfig) error {
 		intr.bot = bot
 		intr.data = cafeconf
 		intr.handlers = map[intrEndpoint]intrFunc{
-			intrWhere:        intr.where,
-			intrWhen:         intr.when,
-			intrWhat:         intr.what,
-			intrPreviewOrder: intr.previewOrder,
+			intrWhere:   intr.where,
+			intrWhen:    intr.when,
+			intrWhat:    intr.what,
+			intrPreview: intr.preview,
 		}
 
 		// NOTE: since intr.keyboards are called from within intr.handlers
 		// all methods must have pointer receiver, otherwise
 		// intr.keyboards must be set before intr.handlers
 		intr.keyboards = map[intrEndpoint]keyboardFunc{
-			intrWhere:        whereKeyboardFactory(cafeconf),
-			intrWhen:         whenKeyboardFactory(cafeconf),
-			intrWhat:         whatKeyboardFactory(cafeconf),
-			intrPreviewOrder: previewOrderKeyboardFactory(cafeconf),
+			intrWhere:   whereKeyboardFactory(cafeconf),
+			intrWhen:    whenKeyboardFactory(cafeconf),
+			intrWhat:    whatKeyboardFactory(cafeconf),
+			intrPreview: previewKeyboardFactory(cafeconf),
 		}
 
 	})
@@ -131,18 +132,18 @@ func (i *intrHandler) what(
 	)
 }
 
-func (i *intrHandler) previewOrder(
+func (i *intrHandler) preview(
 	intrData string,
 	update api.Update,
 	order order.Order,
 ) {
-	caption := text["preview_order"]
-	p := generatePreviewOrderText(order)
+	caption := text["preview"]
+	p := generatePreviewText(order)
 
 	i.updateMessage(
 		update.CallbackQuery,
-		fmt.Sprintf("%s\n%s", caption, p),
-		intrPreviewOrder,
+		fmt.Sprintf("%s\n\n%s", caption, p),
+		intrPreview,
 		intrData,
 		order,
 	)
@@ -199,7 +200,8 @@ func (i *intrHandler) prepareUpdateKeyboard(
 	replyMarkup := i.keyboards[endpoint](intrData, o)
 
 	// TODO (yb): refactor this logic somehow
-	var backButton []api.InlineKeyboardButton
+	var lastButtonRow []api.InlineKeyboardButton
+	var backButton *api.InlineKeyboardButton
 	if endpoint == intrWhen {
 		backButton = backKeyboardButton(intrWhere)
 	} else if endpoint == intrWhat {
@@ -208,22 +210,21 @@ func (i *intrHandler) prepareUpdateKeyboard(
 		} else {
 			backButton = backKeyboardButton(intrWhat)
 		}
-	} else if endpoint == intrPreviewOrder {
+	} else if endpoint == intrPreview {
 		backButton = backKeyboardButton(intrWhat)
 	}
 	if backButton != nil {
-		replyMarkup.InlineKeyboard = append(
-			replyMarkup.InlineKeyboard,
-			backButton,
-		)
+		lastButtonRow = append(lastButtonRow, *backButton)
 	}
 
-	if o.IsReady() {
-		replyMarkup.InlineKeyboard = append(
-			replyMarkup.InlineKeyboard,
-			previewOrderButton(),
-		)
+	if o.IsReady() && endpoint != intrPreview {
+		lastButtonRow = append(lastButtonRow, previewButton())
 	}
+
+	replyMarkup.InlineKeyboard = append(
+		replyMarkup.InlineKeyboard,
+		lastButtonRow,
+	)
 
 	return api.EditMessageReplyMarkupConfig{
 		BaseEdit: api.BaseEdit{
