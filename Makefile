@@ -1,5 +1,6 @@
 install: vet
 	go install -ldflags="-w -s" ./...
+.PHONY: install
 
 run:  vet test
 	go run ./*.go --log-level=debug
