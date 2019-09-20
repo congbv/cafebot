@@ -77,8 +77,8 @@ func testSetTakeaway(t *testing.T, s order.Service, u *api.User) {
 }
 
 func testFinishOrder(t *testing.T, s order.Service, u *api.User) {
-	_, err := s.FinishOrder(u)
-	if err != nil {
+	_, ok := s.FinishOrder(u)
+	if !ok {
 		t.Error("order should be ready")
 	}
 }

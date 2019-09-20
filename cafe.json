@@ -2,6 +2,9 @@
 	"first_order_time": "09:30",
 	"last_order_time": "20:30",
 	"time_slot_interval_min": 15,
+	"orders_channel": [
+		"@limecafe"
+	],
 	"menu": {
 		"🥗 Салати": [
 			"85 Салат Цезарь",

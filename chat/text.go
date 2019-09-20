@@ -28,6 +28,8 @@ var (
 		"preview": "<b>Проверьте свой заказ затем нажмите 'Отправить'</b>",
 		"sent":    "<b>Ваш заказ успешно отправлен в кафе 😉</b>",
 
+		"error": "Произошла ошибка 😞 cделайте заказ по телефону пожалуйста",
+
 		"time_preview_prefix":     "🕑",
 		"order_preview_prefix":    "🥘",
 		"here_preview_prefix":     "🏠",

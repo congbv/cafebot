@@ -11,33 +11,46 @@ import (
 type orderOp string
 
 const (
+	opWhere      orderOp = "where"
+	opWhen       orderOp = "when"
 	opAddMeal    orderOp = "add_meal"
 	opRemoveMeal orderOp = "remove_meal"
-	opWhen       orderOp = "when"
-	opWhere      orderOp = "where"
+	opFinish     orderOp = "finish_order"
 
 	opWhereHere     = "here"
 	opWhereTakeaway = "takeaway"
 )
 
 // processOrder handles user order updates
-func (s *service) processOrder(u *api.User, opData string) order.Order {
+func (s *service) processOrder(u *api.User, opData string) (order.Order, bool) {
+	var finished bool
 	o := s.order.Get(u)
 
 	splited := strings.Split(opData, "=")
 	if len(splited) < 2 {
-		return *o
+		return *o, finished
 	}
 
 	op := orderOp(splited[0])
 	val := splited[1]
 
 	switch op {
+	case opWhere:
+		o = s.order.SetTakeaway(u, val == opWhereTakeaway)
+
+	case opWhen:
+		t, err := time.Parse("15:04", val)
+		if err != nil {
+			log.Errorf("parsing time %+v: %s", val, err)
+			return *o, finished
+		}
+		o = s.order.SetTime(u, t)
+
 	case opAddMeal, opRemoveMeal:
 		meal, ok := s.conf.Cafe.Menu.MealByHash(val)
 		if !ok {
 			log.Errorf("getting meal by hash: %+v: %s", val)
-			return *o
+			return *o, finished
 		}
 		switch op {
 		case opAddMeal:
@@ -46,20 +59,12 @@ func (s *service) processOrder(u *api.User, opData string) order.Order {
 			o = s.order.RemoveMeal(u, meal)
 		}
 
-	case opWhen:
-		t, err := time.Parse("15:04", val)
-		if err != nil {
-			log.Errorf("parsing time %+v: %s", val, err)
-			return *o
-		}
-		o = s.order.SetTime(u, t)
-
-	case opWhere:
-		o = s.order.SetTakeaway(u, val == opWhereTakeaway)
+	case opFinish:
+		o, finished = s.order.FinishOrder(u)
 
 	default:
 	}
 
 	// no need to pass pointer further
-	return *o
+	return *o, finished
 }

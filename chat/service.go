@@ -2,6 +2,7 @@
 package chat
 
 import (
+	"fmt"
 	"time"
 
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -88,14 +89,27 @@ func (s *service) handleUpdate(update api.Update) {
 	if update.CallbackQuery != nil {
 		log.Debugf("handling callback query: %+v", update.CallbackQuery)
 
-		reqdata := update.CallbackQuery.Data
+		q := update.CallbackQuery
+		reqdata := q.Data
 		intrData, opData, err := splitIntrOpData(reqdata)
 		if err != nil {
 			log.Errorf("splitting request data %+v: %s", reqdata, err)
 			return
 		}
 
-		order := s.processOrder(update.CallbackQuery.From, opData)
+		order, finished := s.processOrder(q.From, opData)
+		if finished {
+			err = s.sendOrderToChannel(s.conf.Cafe.Chan, order)
+			if err != nil {
+				log.Errorf(
+					"sending order to cafe: %s, order: %+v",
+					err,
+					order,
+				)
+				s.sendError(q.Message.Chat.ID)
+				return
+			}
+		}
 		intr.handle(intrData, update, order)
 
 		return
@@ -111,4 +125,25 @@ func (s *service) handleUpdate(update api.Update) {
 			return
 		}
 	}
+}
+
+func (s *service) sendOrderToChannels(channel string, o order.Order) error {
+	log.Debugf("sending order to cafe: u: %s, o: %+v", o.User.UserName, o)
+
+	text := fmt.Sprintf(
+		"<b>%s %s</b>\n%s",
+		o.User.FirstName,
+		o.User.UserName,
+		generatePreviewText(o),
+	)
+
+	msg := api.NewMessageToChannel(channel, text)
+	msg.ParseMode = api.ModeHTML
+	_, err := s.bot.Send(msg)
+
+	return err
+}
+
+func (s *service) sendError(chatID int64) {
+	s.bot.Send(api.NewMessage(chatID, text["error"]))
 }

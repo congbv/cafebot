@@ -2,7 +2,6 @@ package order
 
 import (
 	"bytes"
-	"errors"
 	"sync"
 	"time"
 
@@ -131,16 +130,16 @@ func (e ErrNotComplete) OrderNotComplete() bool {
 	return e.noMeal || e.noTime || e.noTakeaway
 }
 
-func (s *inMemService) FinishOrder(u *api.User) (*Order, error) {
+func (s *inMemService) FinishOrder(u *api.User) (*Order, bool) {
 	if u == nil {
-		return nil, errors.New("nil user provided")
+		return nil, false
 	}
 
 	s.mu.RLock()
 	order, ok := s.orders[u.ID]
 	s.mu.RUnlock()
 	if !ok {
-		return nil, errors.New("no order for such user")
+		return nil, false
 	}
 
 	var err ErrNotComplete
@@ -161,10 +160,10 @@ func (s *inMemService) FinishOrder(u *api.User) (*Order, error) {
 	log.Debugf("finishing order: %+v", order)
 
 	if err.OrderNotComplete() {
-		return nil, err
+		return nil, false
 	}
 
-	return order, nil
+	return order, true
 }
 
 func (s *inMemService) get(u *api.User) *Order {

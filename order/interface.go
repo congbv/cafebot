@@ -17,5 +17,5 @@ type Service interface {
 	SetTime(*api.User, time.Time) *Order
 	SetTakeaway(*api.User, bool) *Order
 
-	FinishOrder(*api.User) (*Order, error)
+	FinishOrder(*api.User) (*Order, bool)
 }

@@ -87,7 +87,7 @@ func previewKeyboardFactory(conf config.CafeConfig) keyboardFunc {
 			api.NewInlineKeyboardRow(
 				api.NewInlineKeyboardButtonData(
 					buttonText["send"],
-					string(intrSent),
+					newIntrData(intrSent, "", opFinish, "1"),
 				),
 			),
 		)
