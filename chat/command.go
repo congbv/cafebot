@@ -63,21 +63,18 @@ func (c *cmdHandler) handle(command string, update api.Update) error {
 }
 
 func (c *cmdHandler) help(update api.Update) error {
-	msg := api.NewMessage(
-		update.Message.Chat.ID,
-		text["help"],
+	_, err := c.bot.Send(
+		newMessage(
+			update.Message.Chat.ID,
+			text["help"],
+			false,
+		),
 	)
-
-	_, err := c.bot.Send(msg)
 	return err
 }
 
 func (c *cmdHandler) start(update api.Update) error {
-	msg := api.NewMessage(
-		update.Message.Chat.ID,
-		text["start"],
-	)
-	msg.ParseMode = api.ModeHTML
+	msg := newMessage(update.Message.Chat.ID, text["start"], true)
 	msg.ReplyMarkup = api.NewInlineKeyboardMarkup(
 		api.NewInlineKeyboardRow(
 			api.NewInlineKeyboardButtonData(
@@ -99,11 +96,15 @@ func (c *cmdHandler) wrong(update api.Update) error {
 		chatID = update.CallbackQuery.Message.Chat.ID
 	}
 
-	msg := api.NewMessage(
-		chatID,
-		text["wrong"],
-	)
-
-	_, err := c.bot.Send(msg)
+	_, err := c.bot.Send(newMessage(chatID, text["wrong"], false))
 	return err
+}
+
+func newMessage(chatID int64, text string, bold bool) *api.MessageConfig {
+	if bold {
+		text = boldText(text)
+	}
+	msg := api.NewMessage(chatID, text)
+	msg.ParseMode = api.ModeHTML
+	return &msg
 }

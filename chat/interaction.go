@@ -177,12 +177,22 @@ func (i *intrHandler) updateMessage(
 ) {
 	msgInfo := callbackQuery.Message
 
-	newText := i.prepareUpdateText(msgInfo, msgText)
+	var newText *api.EditMessageTextConfig
+	if msgInfo.Text != msgText {
+		nt := i.prepareUpdateText(msgInfo, msgText, true)
+		newText = &nt
+	}
+
 	newKeyboard := i.prepareUpdateKeyboard(msgInfo, endpoint, intrData, o)
 
 	var err error
 	for _, f := range []func(){
-		func() { _, err = i.bot.Send(newText) },
+		func() {
+			if newText == nil {
+				return
+			}
+			_, err = i.bot.Send(*newText)
+		},
 		func() { _, err = i.bot.Send(newKeyboard) },
 	} {
 		f()
@@ -199,7 +209,11 @@ func (i *intrHandler) updateMessage(
 func (i *intrHandler) prepareUpdateText(
 	msgInfo *api.Message,
 	text string,
+	bold bool,
 ) api.EditMessageTextConfig {
+	if bold {
+		text = boldText(text)
+	}
 	return api.EditMessageTextConfig{
 		BaseEdit: api.BaseEdit{
 			ChatID:    msgInfo.Chat.ID,
@@ -261,4 +275,8 @@ func (i *intrHandler) prepareUpdateKeyboard(
 			ReplyMarkup: replyMarkup,
 		},
 	}
+}
+
+func boldText(text string) string {
+	return fmt.Sprintf("<b>%s</b>", text)
 }
