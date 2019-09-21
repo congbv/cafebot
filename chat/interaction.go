@@ -3,6 +3,7 @@ package chat
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/yarikbratashchuk/cafebot/config"
@@ -68,6 +69,7 @@ func initIntrHandler(bot *api.BotAPI, cafeconf config.CafeConfig) error {
 			intrPreview: previewKeyboardFactory(cafeconf),
 		}
 
+		time.Local = (*time.Location)(cafeconf.TimeLocation)
 	})
 	return nil
 }

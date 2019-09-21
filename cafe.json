@@ -1,6 +1,7 @@
 {
 	"first_order_time": "09:30",
 	"last_order_time": "20:30",
+	"time_location": "Europe/Kiev",
 	"time_slot_interval_min": 15,
 	"orders_channel": "*******",
 	"menu": {

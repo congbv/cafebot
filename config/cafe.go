@@ -11,12 +11,10 @@ import (
 )
 
 type CafeConfig struct {
-	FirstOrderTime      CafeTime `json:"first_order_time"`
-	LastOrderTime       CafeTime `json:"last_order_time"`
-	TimeSlotIntervalMin int      `json:"time_slot_interval_min"`
-
-	// TODO (yb): add timezone
-	// not the issue if the server and a cafe is in the same timezone
+	FirstOrderTime      CafeTime      `json:"first_order_time"`
+	LastOrderTime       CafeTime      `json:"last_order_time"`
+	TimeLocation        *CafeLocation `json:"time_location"`
+	TimeSlotIntervalMin int           `json:"time_slot_interval_min"`
 
 	// OrderChan is a public channel name in a form of @channelname
 	// or a private channel id. See how to get private channel id:
@@ -43,6 +41,24 @@ func (c *CafeTime) UnmarshalJSON(data []byte) error {
 
 	ct := CafeTime(t)
 	*c = ct
+
+	return nil
+}
+
+type CafeLocation time.Location
+
+func (l *CafeLocation) UnmarshalJSON(data []byte) error {
+	dlen := len(data)
+	if dlen < 2 {
+		return errors.New("invalid time location format")
+	}
+
+	loc, err := time.LoadLocation(string(data[1 : dlen-1]))
+	if err != nil {
+		return err
+	}
+
+	*l = CafeLocation(*loc)
 
 	return nil
 }
