@@ -2,6 +2,7 @@ package chat
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/yarikbratashchuk/cafebot/order"
 )
@@ -65,4 +66,25 @@ func generatePreviewText(o order.Order) string {
 	}
 
 	return buf.String()
+}
+
+func generateUserNameText(o order.Order) string {
+	buf := new(bytes.Buffer)
+	buf.WriteString("<b>")
+	buf.WriteString(o.User.FirstName)
+	buf.WriteRune(' ')
+	buf.WriteString(o.User.LastName)
+	buf.WriteString("</b>")
+	buf.WriteRune('\n')
+	if o.User.UserName != "" {
+		buf.WriteRune('@')
+		buf.WriteString(o.User.UserName)
+		buf.WriteRune('\n')
+	}
+	buf.WriteRune('\n')
+	return buf.String()
+}
+
+func boldText(text string) string {
+	return fmt.Sprintf("<b>%s</b>", text)
 }

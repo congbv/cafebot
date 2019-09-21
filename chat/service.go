@@ -130,15 +130,13 @@ func (s *service) handleUpdate(update api.Update) {
 func (s *service) sendOrderToChannel(channel string, o order.Order) error {
 	log.Debugf("sending order to cafe: u: %s, o: %+v", o.User.UserName, o)
 
-	text := fmt.Sprintf(
-		"<b>%s %s\n@%s</b>\n\n%s",
-		o.User.FirstName,
-		o.User.LastName,
-		o.User.UserName,
-		generatePreviewText(o),
-	)
+	userNameText := generateUserNameText(o)
+	previewText := generatePreviewText(o)
 
-	msg := api.NewMessageToChannel(channel, text)
+	msg := api.NewMessageToChannel(
+		channel,
+		fmt.Sprintf("%s\n\n%s", userNameText, previewText),
+	)
 	msg.ParseMode = api.ModeHTML
 	_, err := s.bot.Send(msg)
 

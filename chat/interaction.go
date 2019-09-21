@@ -276,7 +276,3 @@ func (i *intrHandler) prepareUpdateKeyboard(
 		},
 	}
 }
-
-func boldText(text string) string {
-	return fmt.Sprintf("<b>%s</b>", text)
-}
