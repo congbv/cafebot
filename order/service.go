@@ -61,6 +61,9 @@ func (s *inMemService) Get(u *api.User) *Order {
 
 func (s *inMemService) AddMeal(u *api.User, meal string) *Order {
 	order := s.get(u)
+	if order == nil {
+		return nil
+	}
 	order.Meal = append(order.Meal, meal)
 
 	log.Debugf("adding meal: %s, order: %+v", meal, order)
