@@ -6,7 +6,7 @@ order to be ready.
 
 ## Demo
 
-![cafebot](https://user-images.githubusercontent.com/12980380/65349064-3f75e800-dbeb-11e9-8c11-8e4a8ca956dc.gif)
+![ezgif com-video-to-gif](https://user-images.githubusercontent.com/12980380/65387472-60a41900-dd50-11e9-9f15-afa5b9221101.gif)
 
 ## Usage instruction
 
