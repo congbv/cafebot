@@ -79,7 +79,6 @@ func generateUserNameText(o order.Order) string {
 		buf.WriteRune('\n')
 		buf.WriteRune('@')
 		buf.WriteString(o.User.UserName)
-		buf.WriteRune('\n')
 	}
 	return buf.String()
 }

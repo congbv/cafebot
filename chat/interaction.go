@@ -158,7 +158,7 @@ func (i *intrHandler) sent(
 	order order.Order,
 ) {
 	msgText := fmt.Sprintf(
-		"%s\n%s",
+		"%s\n\n%s",
 		text["sent"],
 		generatePreviewText(order),
 	)
