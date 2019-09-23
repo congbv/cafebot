@@ -29,7 +29,8 @@ var (
 		"preview": "Проверьте свой заказ затем нажмите 'Отправить'",
 		"sent":    "Ваш заказ успешно отправлен в кафе 😉",
 
-		"error": "Произошла ошибка 😞 cделайте заказ по телефону пожалуйста",
+		"err_internal":    "Произошла ошибка 😞 cделайте заказ по телефону пожалуйста",
+		"err_no_username": "Добавьте себе имя пользователя в настройках и попробуйте еще раз",
 
 		"time_preview_prefix":     "🕑",
 		"order_preview_prefix":    "🥘",
@@ -75,11 +76,9 @@ func generateUserNameText(o order.Order) string {
 	buf.WriteRune(' ')
 	buf.WriteString(o.User.LastName)
 	buf.WriteString("</b>")
-	if o.User.UserName != "" {
-		buf.WriteRune('\n')
-		buf.WriteRune('@')
-		buf.WriteString(o.User.UserName)
-	}
+	buf.WriteRune('\n')
+	buf.WriteRune('@')
+	buf.WriteString(o.User.UserName)
 	return buf.String()
 }
 

@@ -99,14 +99,20 @@ func (s *service) handleUpdate(update api.Update) {
 			return
 		}
 		if finished {
-			err = s.sendOrderToChannel(s.conf.Cafe.OrderChan, *order)
-			if err != nil {
+			errText := s.sendOrderToChannel(
+				s.conf.Cafe.OrderChan,
+				*order,
+			)
+			if errText != "" {
 				log.Errorf(
-					"sending order to cafe: %s, order: %+v",
-					err,
+					"sending order to cafe: %s, order: %s",
+					errText,
 					order,
 				)
-				s.sendError(q.Message.Chat.ID)
+				if errText != text["err_no_username"] {
+					errText = text["err_internal"]
+				}
+				s.sendError(q.Message.Chat.ID, errText)
 				return
 			}
 		}
@@ -127,8 +133,12 @@ func (s *service) handleUpdate(update api.Update) {
 	}
 }
 
-func (s *service) sendOrderToChannel(channel string, o order.Order) error {
+func (s *service) sendOrderToChannel(channel string, o order.Order) string {
 	log.Debugf("sending order to cafe: u: %s, o: %+v", o.User.UserName, o)
+
+	if o.User.UserName == "" {
+		return text["err_no_username"]
+	}
 
 	userNameText := generateUserNameText(o)
 	previewText := generatePreviewText(o)
@@ -139,10 +149,13 @@ func (s *service) sendOrderToChannel(channel string, o order.Order) error {
 	)
 	msg.ParseMode = api.ModeHTML
 	_, err := s.bot.Send(msg)
+	if err != nil {
+		return err.Error()
+	}
 
-	return err
+	return ""
 }
 
-func (s *service) sendError(chatID int64) {
-	s.bot.Send(api.NewMessage(chatID, text["error"]))
+func (s *service) sendError(chatID int64, errText string) {
+	s.bot.Send(api.NewMessage(chatID, errText))
 }
