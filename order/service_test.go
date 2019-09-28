@@ -4,9 +4,10 @@ import (
 	"testing"
 	"time"
 
+	"cafebot/config"
+	"cafebot/order"
+
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/yarikbratashchuk/cafebot/config"
-	"github.com/yarikbratashchuk/cafebot/order"
 )
 
 func TestInMemoryService(t *testing.T) {

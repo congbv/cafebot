@@ -4,9 +4,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/yarikbratashchuk/cafebot/chat"
-	"github.com/yarikbratashchuk/cafebot/config"
-	"github.com/yarikbratashchuk/cafebot/order"
+	"cafebot/chat"
+	"cafebot/config"
+	"cafebot/order"
 )
 
 func main() {

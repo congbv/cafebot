@@ -4,8 +4,9 @@ import (
 	"strings"
 	"time"
 
+	"cafebot/order"
+
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/yarikbratashchuk/cafebot/order"
 )
 
 type orderOp string

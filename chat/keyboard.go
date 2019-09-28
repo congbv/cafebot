@@ -3,9 +3,10 @@ package chat
 import (
 	"time"
 
+	"cafebot/config"
+	"cafebot/order"
+
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/yarikbratashchuk/cafebot/config"
-	"github.com/yarikbratashchuk/cafebot/order"
 )
 
 func whereKeyboardFactory(conf config.CafeConfig) keyboardFunc {

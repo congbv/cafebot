@@ -5,10 +5,12 @@ import (
 	"sync"
 	"time"
 
+	"cafebot/config"
+
 	api "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/yarikbratashchuk/cafebot/config"
 )
 
+//Order ok
 type Order struct {
 	User     *api.User
 	Meal     []string
@@ -16,6 +18,7 @@ type Order struct {
 	Time     *time.Time
 }
 
+//IsReady ok
 func (o Order) IsReady() bool {
 	return len(o.Meal) > 0 && o.Time != nil && o.Takeaway != nil
 }
@@ -28,6 +31,7 @@ type inMemService struct {
 	orders map[int]*Order
 }
 
+//NewInMemoryService ok
 func NewInMemoryService(conf config.Config) Service {
 	return &inMemService{
 		conf:   conf,
@@ -107,6 +111,7 @@ func (s *inMemService) SetTakeaway(u *api.User, takeaway bool) *Order {
 	return order
 }
 
+//ErrNotComplete ok
 type ErrNotComplete struct {
 	noMeal, noTime, noTakeaway bool
 }
@@ -129,6 +134,7 @@ func (e ErrNotComplete) Error() string {
 	return buf.String()
 }
 
+//OrderNotComplete ok
 func (e ErrNotComplete) OrderNotComplete() bool {
 	return e.noMeal || e.noTime || e.noTakeaway
 }

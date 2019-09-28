@@ -4,33 +4,32 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/yarikbratashchuk/cafebot/order"
+	"cafebot/order"
 )
 
 var (
 	buttonText = map[string]string{
-		"new":      "📝 Сделать заказ",
-		"here":     "🏠 В кафе",
-		"takeaway": "🚶‍♂️ На вынос",
-		"back":     "<< Назад",
-		"preview":  "🛒 Мой заказ",
-		"send":     "📨 Отправить",
+		"new":      "📝 Make an order",
+		"here":     "🏠 In the cafe",
+		"takeaway": "🚶‍♂️ Takeaway",
+		"back":     "<< Back",
+		"preview":  "🛒 My order",
+		"send":     "📨 submit",
 		"selected": "✅",
 	}
 
 	text = map[string]string{
-		"help":  "Лучше позвоните им по телефону, так будет быстрее 😊",
-		"start": "Привет 🖖. Я готов принять твой заказ 👌",
-		"wrong": "Сделайте заказ по телефону, я не понимаю вас 😞",
+		"help":    "Better call them on the phone, it will be faster 😊",
+		"start":   "Hello 🖖. I am ready to accept your order 👌",
+		"wrong":   "Make an order by phone, I do not understand you 😞",
+		"where?":  "In a cafe or takeaway?",
+		"when?":   "What time to cook?",
+		"what?":   "What will you eat?",
+		"preview": "Check your order then click 'Submit'",
+		"sent":    "Your order has been successfully sent to the cafe 😉",
 
-		"where?":  "В кафе или на вынос?",
-		"when?":   "На который час готовить?",
-		"what?":   "Что вы будете есть?",
-		"preview": "Проверьте свой заказ затем нажмите 'Отправить'",
-		"sent":    "Ваш заказ успешно отправлен в кафе 😉",
-
-		"err_internal":    "Произошла ошибка 😞 cделайте заказ по телефону пожалуйста",
-		"err_no_username": "Добавьте себе имя пользователя в настройках и попробуйте еще раз",
+		"err_internal":    "An error has occurred 😞 make an order by phone please",
+		"err_no_username": "Add your username in the settings and try again",
 
 		"time_preview_prefix":     "🕑",
 		"order_preview_prefix":    "🥘",

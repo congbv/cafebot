@@ -3,7 +3,7 @@ install: vet
 .PHONY: install
 
 run:  vet test
-	go run ./*.go --log-level=debug
+	nohup go run ./*.go --log-level=debug &
 .PHONY: run
 
 vet:

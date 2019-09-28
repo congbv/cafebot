@@ -101,6 +101,7 @@ func (m *Meal) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+//MealByHash ok
 func (m *Menu) MealByHash(hash string) (string, bool) {
 	if m == nil {
 		return "", false
